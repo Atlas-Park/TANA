@@ -10,114 +10,73 @@ import textwrap
 st.set_page_config(page_title="타나(TANA)", page_icon="🚦", layout="centered")
 
 # --------------------------------------------------
-# 🎨 CSS 스타일 (Legendary Edition)
+# 🎨 CSS 스타일 (직관성 중심 리빌딩)
 # --------------------------------------------------
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap');
+    .main { background-color: #ffffff; }
     
-    .main { background-color: #f8f9fa; font-family: 'Noto Sans KR', sans-serif; }
-    
-    /* 1. 통합 헤더 (프로필 + 날씨 + 광고) */
-    .header-card {
-        background: white;
-        border-radius: 16px;
-        padding: 12px 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-    }
-    .header-left { display: flex; flex-direction: column; }
-    .user-name { font-size: 18px; font-weight: 900; color: #212529; }
-    .weather-info { font-size: 13px; color: #868e96; display: flex; align-items: center; gap: 5px; }
-    .ad-pill {
-        background: linear-gradient(135deg, #6610f2, #20c997);
-        color: white; font-size: 11px; font-weight: bold;
-        padding: 4px 10px; border-radius: 20px;
-        text-decoration: none;
-        box-shadow: 0 2px 5px rgba(102, 16, 242, 0.3);
-        animation: pulse 2s infinite;
-    }
-
-    /* 2. 공항형 도착 보드 (Arrival Board) */
-    .arrival-board {
-        background-color: #212529;
-        color: #f8f9fa;
-        border-radius: 12px;
-        padding: 15px 20px;
-        margin-bottom: 15px;
-        box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-        border-left: 5px solid #20c997; /* TANA Mint */
-    }
-    .board-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-    .bus-num { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: 1px; }
-    .bus-status { font-size: 14px; color: #20c997; font-weight: bold; text-transform: uppercase; }
-    .board-detail { font-size: 13px; color: #adb5bd; display: flex; gap: 15px; font-family: monospace; }
-
-    /* 3. 아바타 애니메이션 (CSS Magic) */
-    @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-5px); } 100% { transform: translateY(0px); } }
-    @keyframes run { 0% { transform: skewX(0deg) translateX(0); } 25% { transform: skewX(-5deg) translateX(2px); } 75% { transform: skewX(5deg) translateX(-2px); } 100% { transform: skewX(0deg) translateX(0); } }
-    @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
-
-    .avatar-box { height: 100px; display: flex; justify-content: center; align-items: center; margin: 10px 0; }
-    .avatar-img { height: 90px; width: auto; filter: drop-shadow(0 8px 10px rgba(0,0,0,0.15)); }
-    
-    /* 상태별 애니메이션 클래스 */
-    .anim-walk { animation: float 1.5s ease-in-out infinite; }
-    .anim-run { animation: run 0.3s linear infinite; }
-    .anim-rocket { animation: shake 0.5s linear infinite; }
-
-    /* 4. 3분할 결과 카드 (The Result) */
-    .result-card {
-        background: white;
-        border-radius: 24px;
-        padding: 0;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        overflow: hidden;
-        text-align: center;
-        margin-top: 20px;
-    }
-    
-    /* 상단: 인디케이터 영역 */
-    .result-header { padding: 25px 20px 10px; }
-    .status-circle {
-        width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 10px;
+    /* 1. 깔끔한 광고 배너 (V17 스타일 복구) */
+    .ad-box {
+        background-color: #f8f9fa; border: 1px dashed #ced4da; border-radius: 8px;
+        padding: 12px; text-align: center; margin-bottom: 15px; color: #868e96; font-size: 13px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
-    
-    /* 중단: 행동 지침 */
-    .result-action { padding: 0 20px 15px; }
-    .action-title { font-size: 22px; font-weight: 900; color: #212529; margin-bottom: 5px; }
-    .action-desc { font-size: 15px; color: #495057; line-height: 1.4; }
-
-    /* 하단: 데이터 그리드 */
-    .result-data {
-        background-color: #f8f9fa;
-        border-top: 1px solid #eee;
-        padding: 15px;
-        display: flex; justify-content: space-around;
+    .ad-badge {
+        background-color: #adb5bd; color: white; font-size: 10px; padding: 2px 6px; 
+        border-radius: 4px; margin-right: 8px; font-weight: bold;
     }
-    .data-item { display: flex; flex-direction: column; }
-    .data-label { font-size: 11px; color: #868e96; font-weight: 600; text-transform: uppercase; }
-    .data-value { font-size: 16px; color: #212529; font-weight: 800; }
 
-    /* 색상 테마 */
-    .theme-green .status-circle { background: #d3f9d8; color: #2b8a3e; }
-    .theme-green .action-title { color: #2b8a3e; }
-    
-    .theme-yellow .status-circle { background: #fff3bf; color: #f08c00; }
-    .theme-yellow .action-title { color: #f08c00; }
-    
-    .theme-red .status-circle { background: #ffe3e3; color: #c92a2a; }
-    .theme-red .action-title { color: #c92a2a; }
-    
-    .theme-blue .status-circle { background: #e7f5ff; color: #1864ab; }
-    .theme-blue .action-title { color: #1864ab; }
+    /* 2. 프로필 & 날씨 */
+    .profile-container {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 5px 5px; margin-bottom: 10px;
+    }
+    .profile-left { display: flex; align-items: center; }
+    .profile-img { 
+        width: 40px; height: 40px; border-radius: 50%; background-color: #e9ecef; 
+        display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 10px; 
+    }
+    .profile-name { font-size: 16px; font-weight: 800; color: #2c3e50; }
+    .weather-badge {
+        font-size: 14px; font-weight: 600; color: #495057; background-color: #fff;
+        padding: 6px 12px; border-radius: 20px; border: 1px solid #dee2e6; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; gap: 8px; align-items: center;
+    }
 
+    /* 3. 지도 컨테이너 */
+    .map-container {
+        margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 1px solid #eee;
+    }
+
+    /* 4. 신호등 결과 박스 (우리의 아이덴티티!) */
+    .status-box { 
+        padding: 25px 20px; border-radius: 20px; text-align: center; color: white; 
+        margin-top: 20px; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    .success-bg { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .warning-bg { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .danger-bg { background: linear-gradient(135deg, #dc3545 0%, #c92a2a 100%); }
+    .arrival-bg { background: linear-gradient(135deg, #007bff 0%, #0062cc 100%); } /* 도착 시 파란색 */
+
+    /* 결과창 내부 정보 그리드 */
+    .info-grid {
+        display: flex; justify-content: space-between; margin-top: 20px; 
+        background-color: rgba(0,0,0,0.1); border-radius: 12px; padding: 15px;
+    }
+    .info-item { flex: 1; text-align: center; border-right: 1px solid rgba(255,255,255,0.3); }
+    .info-item:last-child { border-right: none; }
+    .info-label { display: block; font-size: 11px; opacity: 0.9; margin-bottom: 3px; }
+    .info-val { display: block; font-size: 16px; font-weight: 800; }
+
+    /* 아바타 & 게이지 */
+    .avatar-container { text-align: center; margin-bottom: 5px; height: 80px; display: flex; align-items: center; justify-content: center; }
+    .avatar-img { height: 80px; width: auto; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); } 
+    .avatar-text { font-size: 60px; line-height: 1.0; }
+    
+    .gauge-bg { width: 100%; height: 10px; background-color: #e9ecef; border-radius: 5px; position: relative; overflow: hidden; margin-bottom: 5px; }
+    .gauge-fill { height: 100%; border-radius: 5px; transition: width 0.5s ease; }
+    .gauge-text { display: flex; justify-content: space-between; font-size: 12px; color: #868e96; margin-bottom: 15px; font-weight: 600; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -142,99 +101,123 @@ def interpolate_pos(start, end, progress):
     lon = start[1] + (end[1] - start[1]) * progress
     return [lat, lon]
 
+def get_weather_factor(weather_condition):
+    if weather_condition == "맑음 ☀️": return 1.0
+    elif weather_condition == "흐림 ☁️": return 0.95
+    elif weather_condition == "비 🌧️": return 0.85
+    elif weather_condition == "눈 ❄️": return 0.70
+    return 1.0
+
 def format_time(minutes):
     mins = int(minutes)
     secs = int((minutes - mins) * 60)
     if mins == 0: return f"{secs}초"
     return f"{mins}분 {secs}초"
 
-# [New] 내러티브 생성기 (숫자 -> 문장)
-def generate_narrative(status, time, queue, seats):
-    if status == "green":
-        return f"현재 속도라면 <b>{format_time(time)}</b> 뒤에 도착해요. <br>이어폰 끼고 천천히 걸어가도 충분합니다 🎵"
-    elif status == "yellow":
-        return f"지금 바로 뛰면 <b>{int(queue)}번째</b>로 줄을 설 수 있어요.<br>막차 탑승 확률 <b>85%</b>입니다! 🏃💨"
-    elif status == "red":
-        if queue > seats + 20:
-            return f"줄이 너무 깁니다 (예상 <b>{int(queue)}명</b>).<br>깔끔하게 포기하고 다음 차나 지하철을 추천해요."
-        else:
-            return f"버스가 <b>{format_time(time)}</b> 안에 떠납니다.<br>물리적으로 도착이 불가능해요 💦"
-    else:
-        return "목적지에 도착했습니다! 오늘도 수고하셨어요 🏁"
-
 # --------------------------------------------------
 # 📍 데이터
 # --------------------------------------------------
-USER_ORIGIN = [37.3835, 126.6550]
+USER_ORIGIN = [37.3835, 126.6550] # 2기숙사 (기본값)
+
 station_db = {
-    "연세대학교 (국제)": {"coords": [37.3815, 126.6580], "buses": ["M6724", "9201"]},
-    "박문여자고등학교": {"coords": [37.3948, 126.6672], "buses": ["순환41", "9"]},
-    "박문중학교": {"coords": [37.3932, 126.6682], "buses": ["순환41"]}
+    "연세대학교 (국제)": {
+        "coords": [37.3815, 126.6580],
+        "buses": ["M6724", "9201"]
+    },
+    "박문여자고등학교": {
+        "coords": [37.3948, 126.6672],
+        "buses": ["순환41", "9"]
+    },
+    "박문중학교": {
+        "coords": [37.3932, 126.6682],
+        "buses": ["순환41"]
+    }
 }
 
 # --------------------------------------------------
-# 🔧 Admin Console (V18)
+# 🔧 Admin Console (V19)
 # --------------------------------------------------
 with st.sidebar:
-    st.header("🎬 TANA V18 Legend")
+    st.header("🎬 TANA V19 Basic")
+    
     st.subheader("1. 버스 상황")
     prev_bus_status = st.radio("출발 상태", ["🟢 빈 자리 남고 출발 (리셋 O)", "🔴 만석으로 출발 (리셋 X)"], index=0)
     admin_time_passed = st.slider("이전 버스 경과 (분)", 0, 60, 25)
     admin_seats = st.slider("잔여 좌석 (석)", 0, 45, 15)
     
-    st.subheader("2. 날씨")
+    st.subheader("2. 날씨 & 기온")
     current_weather = st.radio("날씨", ["맑음 ☀️", "흐림 ☁️", "비 🌧️", "눈 ❄️"], horizontal=True)
-    admin_temp = st.slider("기온", -15, 40, 18)
+    admin_temp = st.slider("기온 (℃)", -15, 40, 18)
     
     st.subheader("3. 사용자 이동")
-    journey_progress = st.slider("진행률 (%)", 0, 100, 0)
-    admin_speed = st.slider("기초 속도", 2.0, 15.0, 5.0, step=0.1)
+    journey_progress = st.slider("목적지까지 진행률 (%)", 0, 100, 0)
+    
+    st.subheader("4. 기초 능력치")
+    admin_speed = st.slider("기초 속도 (km/h)", 2.0, 15.0, 5.0, step=0.1)
+
 
 # --------------------------------------------------
-# 📱 메인 UI
+# 📱 메인 화면 UI
 # --------------------------------------------------
 
-# 1. 통합 헤더 (Profile + Weather + Ad)
+# 1. 타이틀 & 배너 (V17 스타일)
+st.title("타나(TANA)")
+st.markdown(textwrap.dedent("""
+    <div class="ad-box">
+        <span class="ad-badge">AD</span>
+        <span>기다리는 시간, <b>스타벅스</b>에서 따뜻하게 보내세요 (쿠폰받기)</span>
+    </div>
+"""), unsafe_allow_html=True)
+
+# 2. 프로필 (간단하게)
 st.markdown(f"""
-    <div class="header-card">
-        <div class="header-left">
-            <div class="user-name">박연세 님 👋</div>
-            <div class="weather-info">
-                <span>{current_weather}</span>
-                <span>•</span>
-                <span>{admin_temp}℃</span>
-                <span>•</span>
-                <span>체감 {admin_temp-2}℃</span>
-            </div>
+    <div class="profile-container">
+        <div class="profile-left">
+            <div class="profile-img">👤</div>
+            <div class="profile-name">박연세 님</div>
         </div>
-        <a href="#" class="ad-pill">🎁 메가커피 쿠폰받기</a>
+        <div class="weather-badge">
+            <span>{current_weather}</span>
+            <span style="color:#ced4da;">|</span>
+            <span>{admin_temp}℃</span>
+        </div>
     </div>
 """, unsafe_allow_html=True)
 
-# 2. 미니맵 (상단 고정)
-# 좌표 및 버스 선택 로직
-c1, c2 = st.columns([1.3, 1])
-with c1: target_station_name = st.selectbox("탑승 정류장", list(station_db.keys()), label_visibility="collapsed")
-with c2: target_bus = st.selectbox("버스", station_db[target_station_name]["buses"], label_visibility="collapsed")
+# 3. 지도 (Mini Map) - 현위치 버튼 고장 수리 완료
+# 세션 상태 초기화
+if 'map_key' not in st.session_state:
+    st.session_state.map_key = 0
 
+# 탑승 정류장 & 버스 선택
+c1, c2 = st.columns([1.3, 1])
+with c1: target_station_name = st.selectbox("탑승 정류장", list(station_db.keys()))
+with c2: 
+    available_buses = station_db[target_station_name]["buses"]
+    target_bus = st.selectbox("탑승 버스", available_buses)
+
+# 좌표 계산
 origin_coords = USER_ORIGIN
 dest_coords = station_db[target_station_name]["coords"]
 current_user_coords = interpolate_pos(origin_coords, dest_coords, journey_progress / 100)
 
-# 지도 세션 관리
-if 'view_state' not in st.session_state:
-    st.session_state.view_state = pdk.ViewState(latitude=(origin_coords[0]+dest_coords[0])/2, longitude=(origin_coords[1]+dest_coords[1])/2, zoom=15)
+# 지도 뷰포트 설정 (버튼 누르면 map_key 증가 -> 강제 리프레시)
 if st.button("📍 현위치로 지도 이동"):
-    st.session_state.view_state = pdk.ViewState(latitude=current_user_coords[0], longitude=current_user_coords[1], zoom=15)
-elif journey_progress > 0: 
-    st.session_state.view_state = pdk.ViewState(latitude=current_user_coords[0], longitude=current_user_coords[1], zoom=16)
+    st.session_state.map_key += 1
+    view_lat, view_lon, view_zoom = current_user_coords[0], current_user_coords[1], 15.5
+elif journey_progress > 0:
+    # 이동 중일 때는 자동으로 따라가기
+    view_lat, view_lon, view_zoom = current_user_coords[0], current_user_coords[1], 16.0
+else:
+    # 기본: 전체 경로 보이게
+    view_lat, view_lon, view_zoom = (origin_coords[0]+dest_coords[0])/2, (origin_coords[1]+dest_coords[1])/2, 14.5
 
 # 지도 렌더링
 path_data = pd.DataFrame([{'path': [ [origin_coords[1], origin_coords[0]], [dest_coords[1], dest_coords[0]] ]}])
 point_data = pd.DataFrame([
-    {'lat': origin_coords[0], 'lon': origin_coords[1], 'type': 'Start', 'color': [200,200,200,150], 'radius': 10},
-    {'lat': dest_coords[0], 'lon': dest_coords[1], 'type': 'End', 'color': [32, 201, 151, 200], 'radius': 20}, # Mint Color
-    {'lat': current_user_coords[0], 'lon': current_user_coords[1], 'type': 'User', 'color': [0,120,255,255], 'radius': 30}
+    {'lat': origin_coords[0], 'lon': origin_coords[1], 'type': '출발', 'color': [200,200,200,150], 'radius': 10},
+    {'lat': dest_coords[0], 'lon': dest_coords[1], 'type': '정류장', 'color': [50,50,50,200], 'radius': 20},
+    {'lat': current_user_coords[0], 'lon': current_user_coords[1], 'type': '나', 'color': [0,120,255,255], 'radius': 30}
 ])
 
 r = pdk.Deck(
@@ -242,120 +225,99 @@ r = pdk.Deck(
         pdk.Layer("PathLayer", path_data, get_path="path", width_scale=20, width_min_pixels=3, get_color=[180,180,180,100]),
         pdk.Layer("ScatterplotLayer", point_data, get_position='[lon, lat]', get_color='color', get_radius='radius')
     ],
-    initial_view_state=st.session_state.view_state,
-    map_style="mapbox://styles/mapbox/light-v9" 
+    initial_view_state=pdk.ViewState(latitude=view_lat, longitude=view_lon, zoom=view_zoom),
+    map_style="mapbox://styles/mapbox/light-v9"
 )
-st.pydeck_chart(r)
+# map_key를 넣어 강제로 다시 그리게 함
+st.pydeck_chart(r, use_container_width=True, key=f"map_{st.session_state.map_key}")
 
-# 3. 계산 로직 (Logic Engine)
-if current_weather == "맑음 ☀️": resist = 1.0
-elif current_weather == "흐림 ☁️": resist = 0.95
-elif current_weather == "비 🌧️": resist = 0.85
-else: resist = 0.70 # 눈
 
-effective_speed = admin_speed * resist
+# 4. 속도 & 아바타 (날씨 저항 반영)
+resist_factor = get_weather_factor(current_weather)
+effective_speed = admin_speed * resist_factor
+
+# 아바타 결정 (Effective Speed 기준)
+if effective_speed < 4.0: img_file, emoji_backup, pace_color = "img_slow.png", "🐢", "#28a745"
+elif effective_speed < 7.0: img_file, emoji_backup, pace_color = "img_walk.png", "🚶", "#17a2b8"
+elif effective_speed < 10.0: img_file, emoji_backup, pace_color = "img_run.png", "🏃", "#ffc107"
+else: img_file, emoji_backup, pace_color = "img_rocket.png", "🚀", "#dc3545"
+
+# 이미지 표시
+img_base64 = get_img_as_base64(img_file)
+if img_base64:
+    st.markdown(f'<div class="avatar-container"><img src="data:image/png;base64,{img_base64}" class="avatar-img"></div>', unsafe_allow_html=True)
+else:
+    st.markdown(f'<div class="avatar-container"><div class="avatar-text">{emoji_backup}</div></div>', unsafe_allow_html=True)
+
+# 게이지 (깔끔하게)
+percent_speed = min((effective_speed / 15.0) * 100, 100)
+st.markdown(f"""
+    <div class="gauge-bg">
+        <div class="gauge-fill" style="width: {percent_speed}%; background-color: {pace_color};"></div>
+    </div>
+    <div class="gauge-text">
+        <span>현재 페이스</span>
+        <span>{effective_speed:.1f} km/h</span>
+    </div>
+""", unsafe_allow_html=True)
+
+
+# 5. 최종 계산 & 결과 카드 (직관성 복귀)
 remain_distance = calculate_distance(current_user_coords[0], current_user_coords[1], dest_coords[0], dest_coords[1])
 required_time = 0 if remain_distance < 0.02 else (remain_distance / effective_speed) * 60
 
-# 대기열 계산
+# 대기열 로직
 inflow_rate = 3.0 
 base_queue = 0 if "빈 자리" in prev_bus_status else 25
 current_queue = base_queue + int(admin_time_passed * inflow_rate)
 future_queue = current_queue + (inflow_rate * required_time)
 final_bus_time_for_calc = 15 
 
-# 상태 판단
+# 상태 판단 (신호등 Logic)
 if journey_progress >= 100:
-    theme = "theme-blue"
-    icon = "🏁"
-    title = "도착 완료"
+    bg_class, icon, msg, sub_msg = "arrival-bg", "🏁", "도착 완료", "정류장에 도착했습니다!"
 elif required_time > final_bus_time_for_calc:
-    theme = "theme-red"
-    icon = "🚫"
-    title = "탑승 불가"
+    bg_class, icon, msg, sub_msg = "danger-bg", "🔴", "탑승 불가", "이미 버스가 떠납니다"
 elif future_queue > admin_seats: 
-    theme = "theme-red"
-    icon = "😱"
-    title = "탑승 불가"
+    bg_class, icon, msg, sub_msg = "danger-bg", "🔴", "탑승 불가", f"줄이 너무 깁니다"
 elif future_queue > (admin_seats - 5): 
-    theme = "theme-yellow"
-    icon = "🏃"
-    title = "전력 질주!"
+    bg_class, icon, msg, sub_msg = "warning-bg", "🟡", "전력 질주!", f"지금 뛰면 막차 가능"
 else:
-    theme = "theme-green"
-    icon = "☕"
-    title = "여유 있음"
+    bg_class, icon, msg, sub_msg = "success-bg", "🟢", "여유 있음", f"편안하게 가세요"
 
-# 내러티브 생성
-narrative_text = generate_narrative(theme.split("-")[1], required_time, future_queue, admin_seats)
-
-# 4. 공항형 버스 보드 (Arrival Board)
-if "빈 자리" in prev_bus_status:
-    bus_status_msg = "ON TIME (RESET)"
-else:
-    bus_status_msg = f"DELAYED ({admin_time_passed} min)"
-
-st.markdown(f"""
-    <div class="arrival-board">
-        <div class="board-row">
-            <div class="bus-num">{target_bus}</div>
-            <div class="bus-status">{bus_status_msg}</div>
+# [핵심] 통합 정보 카드
+html_content = textwrap.dedent(f"""
+<div class="status-box {bg_class}">
+    <div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>
+    <h2 style="margin:0; color: inherit; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">{msg}</h2>
+    <p style="margin-top: 5px; font-size: 18px; color: inherit; font-weight: 500;">{sub_msg}</p>
+    
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="info-label">남은 거리</span>
+            <span class="info-val">{int(remain_distance*1000)}m</span>
         </div>
-        <div class="board-row" style="margin-top:10px; padding-top:10px; border-top:1px dashed #495057;">
-            <div class="board-detail">
-                <span>ARRIVE: {final_bus_time_for_calc} MIN</span>
-                <span>SEAT: {admin_seats}</span>
-            </div>
-            <div class="board-detail">
-                <span>QUEUE: {int(future_queue)}</span>
-            </div>
+        <div class="info-item">
+            <span class="info-label">도착 예정</span>
+            <span class="info-val">{format_time(required_time)}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">버스 도착</span>
+            <span class="info-val">{final_bus_time_for_calc}분 후</span>
         </div>
     </div>
-""", unsafe_allow_html=True)
-
-# 5. 아바타 (CSS Animation 적용)
-if effective_speed < 4.0: 
-    img_file, anim_class = "img_slow.png", "anim-walk"
-elif effective_speed < 8.0: 
-    img_file, anim_class = "img_walk.png", "anim-walk"
-elif effective_speed < 11.0: 
-    img_file, anim_class = "img_run.png", "anim-run"
-else: 
-    img_file, anim_class = "img_rocket.png", "anim-rocket"
-
-img_base64 = get_img_as_base64(img_file)
-if img_base64:
-    st.markdown(f"""
-        <div class="avatar-box">
-            <img src="data:image/png;base64,{img_base64}" class="avatar-img {anim_class}">
+    
+    <div class="info-grid" style="margin-top:10px; background-color:rgba(255,255,255,0.2);">
+        <div class="info-item">
+            <span class="info-label">잔여 좌석</span>
+            <span class="info-val">{admin_seats}석</span>
         </div>
-    """, unsafe_allow_html=True)
-else:
-    st.markdown(f"<div style='text-align:center; font-size:50px;'>🏃</div>", unsafe_allow_html=True)
-
-# 6. 3단 합체 결과 카드 (Final UI)
-st.markdown(f"""
-    <div class="result-card {theme}">
-        <div class="result-header">
-            <div class="status-circle">{icon}</div>
-        </div>
-        <div class="result-action">
-            <div class="action-title">{title}</div>
-            <div class="action-desc">{narrative_text}</div>
-        </div>
-        <div class="result-data">
-            <div class="data-item">
-                <span class="data-label">남은 거리</span>
-                <span class="data-value">{int(remain_distance*1000)}m</span>
-            </div>
-            <div class="data-item">
-                <span class="data-label">현재 속도</span>
-                <span class="data-value">{effective_speed:.1f} km/h</span>
-            </div>
-            <div class="data-item">
-                <span class="data-label">도착 예상</span>
-                <span class="data-value">{format_time(required_time)}</span>
-            </div>
+        <div class="info-item" style="border:none;">
+            <span class="info-label">예상 대기</span>
+            <span class="info-val">{int(future_queue)}명</span>
         </div>
     </div>
-""", unsafe_allow_html=True)
+</div>
+""")
+
+st.markdown(html_content, unsafe_allow_html=True)
