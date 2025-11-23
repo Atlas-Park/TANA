@@ -126,37 +126,36 @@ def format_time(minutes):
     return f"{mins}분 {secs}초"
 
 # --------------------------------------------------
-# 📍 데이터
+# 📍 데이터 (정확한 좌표 반영)
 # --------------------------------------------------
-default_start_locs = {
-    "송도 2기숙사 (D동)": [37.3835, 126.6550],
-    "송도 1기숙사 (A동)": [37.3820, 126.6570],
-    "언더우드 기념도서관": [37.3805, 126.6590]
-}
+# [Fix] 내 위치 정의 (이게 빠져서 에러났었음!)
+USER_ORIGIN = [37.3835, 126.6550]
+
+# 정류장 데이터
 station_db = {
     "연세대학교 (국제)": {
         "coords": [37.3815, 126.6580],
         "buses": ["M6724", "9201"]
     },
     "박문여자고등학교": {
-        "coords": [37.3948, 126.6672],
+        "coords": [37.3948, 126.6672], # 송도 캠퍼스 좌표 수정
         "buses": ["순환41", "9"]
     },
     "박문중학교": {
-        "coords": [37.3932, 126.6682],
+        "coords": [37.3932, 126.6682], # 송도 캠퍼스 좌표 수정
         "buses": ["순환41"]
     }
 }
 
 # --------------------------------------------------
-# 🔧 Admin Console (V16: 리셋 포인트 로직 강화)
+# 🔧 Admin Console (V16)
 # --------------------------------------------------
 with st.sidebar:
     st.header("🎬 TANA Studio V16")
     
     st.subheader("1. 버스 상황")
     
-    # [핵심 수정] 리셋 포인트 로직을 명확하게 분리
+    # 리셋 포인트 로직
     prev_bus_status = st.radio(
         "이전 버스 출발 상태", 
         ["🟢 빈 자리 남고 출발 (리셋 O)", "🔴 만석으로 출발 (리셋 X)"],
@@ -225,15 +224,12 @@ current_user_coords = interpolate_pos(origin_coords, dest_coords, journey_progre
 
 
 # 4. [중요] 리셋 포인트 로직 및 상태 메시지
-# 리셋 여부에 따라 '기본 대기열(backlog)'이 달라짐
 is_reset = "빈 자리" in prev_bus_status
 
 if is_reset:
-    # 리셋 포인트: 대기열 0명에서 시작 + 시간 경과
     base_queue = 0
     status_badge = "✨ 리셋 포인트 (Reset Point)"
 else:
-    # 리셋 아님: 이월 인원(25명 가정) + 시간 경과
     base_queue = 25
     status_badge = "⚠️ 이월 인원 누적 (Backlog)"
 
@@ -241,7 +237,7 @@ status_text = f"📡 이전 {target_bus} 버스가 떠난 지 <b>{admin_time_pas
 st.markdown(f'<div class="info-text-box">{status_text}</div>', unsafe_allow_html=True)
 
 
-# 5. 지도 시각화 (Session State 유지)
+# 5. 지도 시각화
 if 'view_state' not in st.session_state:
     st.session_state.view_state = pdk.ViewState(latitude=(origin_coords[0]+dest_coords[0])/2, longitude=(origin_coords[1]+dest_coords[1])/2, zoom=15)
 
@@ -310,7 +306,7 @@ st.markdown(f"""
 st.divider()
 
 
-# 7. 최종 결과 (계산 로직)
+# 7. 최종 결과
 remain_distance = calculate_distance(current_user_coords[0], current_user_coords[1], dest_coords[0], dest_coords[1])
 
 if remain_distance < 0.02: 
@@ -319,11 +315,8 @@ if remain_distance < 0.02:
 else:
     required_time = (remain_distance / effective_speed) * 60
 
-inflow_rate = 3.0 # 분당 유입 인원
-# [핵심 공식] 현재 대기열 = 기초 대기열(0 or 25) + (시간 * 유입률)
+inflow_rate = 3.0 
 current_queue = base_queue + int(admin_time_passed * inflow_rate)
-
-# 도착 시점의 미래 대기열 = 현재 대기열 + (내가 가는 동안 쌓일 인원)
 future_queue = current_queue + (inflow_rate * required_time)
 final_bus_time_for_calc = 15 
 
