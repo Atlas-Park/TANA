@@ -70,8 +70,6 @@ st.markdown("""
     .success-bg { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3); }
     .warning-bg { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.1); box-shadow: 0 10px 25px rgba(255, 193, 7, 0.3); }
     .danger-bg { background: linear-gradient(135deg, #dc3545 0%, #c92a2a 100%); box-shadow: 0 10px 25px rgba(220, 53, 69, 0.3); }
-    
-    /* [New] 도착 완료용 파란색 배경 */
     .arrival-bg { background: linear-gradient(135deg, #007bff 0%, #0062cc 100%); box-shadow: 0 10px 25px rgba(0, 123, 255, 0.3); }
 
     /* 결과창 내부 디테일 */
@@ -128,37 +126,45 @@ def format_time(minutes):
     return f"{mins}분 {secs}초"
 
 # --------------------------------------------------
-# 📍 데이터 (정류장 & 버스 매핑)
+# 📍 데이터
 # --------------------------------------------------
-# 내 위치 (시연용 고정: 송도 2기숙사)
-USER_ORIGIN = [37.3835, 126.6550]
-
-# 정류장 데이터 (좌표 + 가능한 버스 목록)
+default_start_locs = {
+    "송도 2기숙사 (D동)": [37.3835, 126.6550],
+    "송도 1기숙사 (A동)": [37.3820, 126.6570],
+    "언더우드 기념도서관": [37.3805, 126.6590]
+}
 station_db = {
     "연세대학교 (국제)": {
         "coords": [37.3815, 126.6580],
         "buses": ["M6724", "9201"]
     },
     "박문여자고등학교": {
-        "coords": [37.4050, 126.6680],
+        "coords": [37.3948, 126.6672],
         "buses": ["순환41", "9"]
     },
     "박문중학교": {
-        "coords": [37.4020, 126.6650],
+        "coords": [37.3932, 126.6682],
         "buses": ["순환41"]
     }
 }
 
 # --------------------------------------------------
-# 🔧 Admin Console
+# 🔧 Admin Console (V16: 리셋 포인트 로직 강화)
 # --------------------------------------------------
 with st.sidebar:
-    st.header("🎬 TANA Studio V14")
+    st.header("🎬 TANA Studio V16")
     
     st.subheader("1. 버스 상황")
+    
+    # [핵심 수정] 리셋 포인트 로직을 명확하게 분리
+    prev_bus_status = st.radio(
+        "이전 버스 출발 상태", 
+        ["🟢 빈 자리 남고 출발 (리셋 O)", "🔴 만석으로 출발 (리셋 X)"],
+        index=0
+    )
+    
     admin_time_passed = st.slider("이전 버스 경과 (분)", 0, 60, 25)
-    admin_seats = st.slider("잔여 좌석 (석)", 0, 45, 15)
-    is_reset_mode = st.toggle("리셋 포인트 (대기열 0)", value=False)
+    admin_seats = st.slider("현재 버스 잔여 좌석 (석)", 0, 45, 15)
     
     st.subheader("2. 날씨 & 기온")
     current_weather = st.radio("날씨", ["맑음 ☀️", "흐림 ☁️", "비 🌧️", "눈 ❄️"], horizontal=True)
@@ -172,7 +178,7 @@ with st.sidebar:
 
 
 # --------------------------------------------------
-# 📱 메인 화면
+# 📱 메인 화면 UI
 # --------------------------------------------------
 
 # 1. 타이틀 & 광고
@@ -199,17 +205,14 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# 3. [UX 변경] 탑승 정류장 선택 -> 버스 자동 변경
+# 3. 탑승 정류장 & 버스 선택
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
 c1, c2 = st.columns([1.3, 1])
 
 with c1: 
-    # 출발지는 '현위치'로 고정된다는 느낌을 주기 위해 텍스트만 표시하거나, 그냥 Selectbox 제목을 '현위치'로
-    # 형 요청: 출발지 선택 X -> 현위치는 앱에서 측정 -> 탑승 정류장 고르기
     target_station_name = st.selectbox("탑승 정류장 (Destination)", list(station_db.keys()))
 
 with c2: 
-    # 정류장에 맞는 버스 목록만 가져오기
     available_buses = station_db[target_station_name]["buses"]
     target_bus = st.selectbox("탑승 버스", available_buses)
 
@@ -221,17 +224,31 @@ dest_coords = station_db[target_station_name]["coords"]
 current_user_coords = interpolate_pos(origin_coords, dest_coords, journey_progress / 100)
 
 
-# 4. 버스 정보 텍스트
-if is_reset_mode:
-    status_text = f"✨ 방금 {target_bus} 버스가 도착했습니다! (대기열 리셋)"
+# 4. [중요] 리셋 포인트 로직 및 상태 메시지
+# 리셋 여부에 따라 '기본 대기열(backlog)'이 달라짐
+is_reset = "빈 자리" in prev_bus_status
+
+if is_reset:
+    # 리셋 포인트: 대기열 0명에서 시작 + 시간 경과
+    base_queue = 0
+    status_badge = "✨ 리셋 포인트 (Reset Point)"
 else:
-    status_text = f"📡 이전 {target_bus} 버스가 떠난 지 <b>{admin_time_passed}분</b> 지났습니다."
+    # 리셋 아님: 이월 인원(25명 가정) + 시간 경과
+    base_queue = 25
+    status_badge = "⚠️ 이월 인원 누적 (Backlog)"
+
+status_text = f"📡 이전 {target_bus} 버스가 떠난 지 <b>{admin_time_passed}분</b> 지났습니다.<br><span style='font-size:12px; color:#888'>{status_badge}</span>"
 st.markdown(f'<div class="info-text-box">{status_text}</div>', unsafe_allow_html=True)
 
 
-# 5. 지도 시각화
-view_lat = (current_user_coords[0] + dest_coords[0]) / 2
-view_lon = (current_user_coords[1] + dest_coords[1]) / 2
+# 5. 지도 시각화 (Session State 유지)
+if 'view_state' not in st.session_state:
+    st.session_state.view_state = pdk.ViewState(latitude=(origin_coords[0]+dest_coords[0])/2, longitude=(origin_coords[1]+dest_coords[1])/2, zoom=15)
+
+if st.button("📍 현위치로 지도 이동"):
+    st.session_state.view_state = pdk.ViewState(latitude=current_user_coords[0], longitude=current_user_coords[1], zoom=15)
+elif journey_progress > 0: 
+    st.session_state.view_state = pdk.ViewState(latitude=current_user_coords[0], longitude=current_user_coords[1], zoom=16)
 
 path_data = pd.DataFrame([{'path': [ [origin_coords[1], origin_coords[0]], [dest_coords[1], dest_coords[0]] ]}])
 point_data = pd.DataFrame([
@@ -241,15 +258,12 @@ point_data = pd.DataFrame([
 ])
 
 with st.expander("🗺️ 실시간 경로 추적 (View Map)", expanded=True):
-    if st.button("📍 현위치로 지도 이동"):
-         view_lat, view_lon = current_user_coords[0], current_user_coords[1]
-
     r = pdk.Deck(
         layers=[
             pdk.Layer("PathLayer", path_data, get_path="path", width_scale=20, width_min_pixels=3, get_color=[180,180,180,100]),
             pdk.Layer("ScatterplotLayer", point_data, get_position='[lon, lat]', get_color='color', get_radius='radius')
         ],
-        initial_view_state=pdk.ViewState(latitude=view_lat, longitude=view_lon, zoom=15)
+        initial_view_state=st.session_state.view_state
     )
     st.pydeck_chart(r)
 
@@ -296,7 +310,7 @@ st.markdown(f"""
 st.divider()
 
 
-# 7. 최종 결과 (로직 수정: 잔여석 vs 대기열)
+# 7. 최종 결과 (계산 로직)
 remain_distance = calculate_distance(current_user_coords[0], current_user_coords[1], dest_coords[0], dest_coords[1])
 
 if remain_distance < 0.02: 
@@ -305,19 +319,22 @@ if remain_distance < 0.02:
 else:
     required_time = (remain_distance / effective_speed) * 60
 
-inflow_rate = 3.5
-current_queue = 0 if is_reset_mode else int(admin_time_passed * 2.1)
+inflow_rate = 3.0 # 분당 유입 인원
+# [핵심 공식] 현재 대기열 = 기초 대기열(0 or 25) + (시간 * 유입률)
+current_queue = base_queue + int(admin_time_passed * inflow_rate)
+
+# 도착 시점의 미래 대기열 = 현재 대기열 + (내가 가는 동안 쌓일 인원)
 future_queue = current_queue + (inflow_rate * required_time)
 final_bus_time_for_calc = 15 
 
-# [Logic Fix] 상태 판단 로직 강화
+# 상태 판단
 if journey_progress >= 100:
     bg_class, icon, msg, sub_msg = "arrival-bg", "🏁", "도착 완료", "정류장에 도착했습니다!"
 elif required_time > final_bus_time_for_calc:
     bg_class, icon, msg, sub_msg = "danger-bg", "🔴", "탑승 불가", f"이미 버스가 떠납니다"
-elif future_queue > admin_seats: # [핵심] 대기열 > 잔여석이면 무조건 빨강
+elif future_queue > admin_seats: 
     bg_class, icon, msg, sub_msg = "danger-bg", "🔴", "탑승 불가", f"줄이 너무 깁니다 (잔여 {admin_seats}석)"
-elif future_queue > (admin_seats - 5): # 간당간당하면 노랑
+elif future_queue > (admin_seats - 5): 
     bg_class, icon, msg, sub_msg = "warning-bg", "🟡", "전력 질주!", f"지금 뛰면 막차 가능"
 else:
     bg_class, icon, msg, sub_msg = "success-bg", "🟢", "여유 있음", f"편안하게 가세요"
