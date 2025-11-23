@@ -8,7 +8,7 @@ import textwrap
 st.set_page_config(page_title="TANA", page_icon="🚦", layout="centered")
 
 # --------------------------------------------------
-# 🎨 CSS 스타일 (Final: 광고 추가 & 노란색 수정 & 그리드 변경)
+# 🎨 CSS 스타일 (FIX: 셀렉트박스 글씨 색상 강제 & 멘트 수정)
 # --------------------------------------------------
 st.markdown("""
 <style>
@@ -38,7 +38,7 @@ st.markdown("""
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
-    /* [NEW] 광고 배너 (Ad Banner) - 빨간 박스 대체 */
+    /* 광고 배너 */
     .ad-banner {
         background: #e9ecef; 
         border: 1px dashed #adb5bd;
@@ -51,7 +51,28 @@ st.markdown("""
         padding: 2px 6px; border-radius: 4px;
     }
 
-    /* 액션 카드 (Hero) - [FIX] 노란색 수정 */
+    /* [FIX] 입력창 컨테이너 & 셀렉트박스 강제 스타일링 */
+    .input-container {
+        background: white; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    /* Streamlit 위젯 라벨 색상 강제 */
+    .stSelectbox label p { font-size: 12px !important; font-weight: 700 !important; color: #8E8E93 !important; }
+    /* 셀렉트박스 내부 텍스트 색상 검정으로 강제 (다크모드 방지) */
+    div[data-baseweb="select"] span {
+        color: #000000 !important;
+    }
+    div[data-baseweb="select"] > div {
+        background-color: #F2F2F7 !important;
+        border-color: #E5E5EA !important;
+        color: #000000 !important;
+    }
+    /* 드롭다운 메뉴 텍스트도 검정으로 */
+    ul[data-baseweb="menu"] li span {
+        color: #000000 !important;
+    }
+
+    /* 액션 카드 (Hero) */
     .hero-card {
         border-radius: 26px; padding: 40px 20px 60px 20px;
         text-align: center; color: white; margin-bottom: 20px;
@@ -60,13 +81,7 @@ st.markdown("""
         animation: pulse 2s infinite ease-in-out;
     }
     .hero-green { background: linear-gradient(135deg, #34C759, #30B0C7); }
-    
-    /* [FIX] 찐 노란색 (Yellow) */
-    .hero-yellow { 
-        background: linear-gradient(135deg, #FFCC00 0%, #FF9500 100%); 
-        text-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 글씨 잘 보이게 그림자 */
-    }
-    
+    .hero-yellow { background: linear-gradient(135deg, #FFCC00 0%, #FF9500 100%); text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .hero-red { background: linear-gradient(135deg, #FF453A, #FF375F); }
     .hero-blue { background: linear-gradient(135deg, #007AFF, #5AC8FA); }
 
@@ -102,7 +117,7 @@ st.markdown("""
         100% { transform: scale(1); }
     }
 
-    /* 정보 그리드 (CSS Grid) - [FIX] 배치 변경 */
+    /* 정보 그리드 (CSS Grid) */
     .info-grid-container {
         display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%;
     }
@@ -119,11 +134,6 @@ st.markdown("""
     .txt-red { color: #FF453A !important; }
     .txt-blue { color: #007AFF !important; }
     .txt-green { color: #34C759 !important; }
-    
-    /* Selectbox 투명화 (배경에 녹아들게) */
-    div[data-baseweb="select"] > div {
-        background-color: rgba(255,255,255,0.5); border: none;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -156,9 +166,7 @@ def interpolate_pos(start, end, progress):
 with st.sidebar:
     st.header("🎬 Director Mode")
     
-    # [FIX] 날씨 조절 가능하게 추가
     weather = st.radio("날씨 설정", ["☀️ 맑음", "🌧️ 비", "❄️ 눈"], horizontal=True)
-    
     journey_progress = st.slider("진행률 (%)", 0, 100, 0)
     admin_speed = st.slider("속도 (km/h)", 2.0, 15.0, 5.0)
     admin_time_passed = st.slider("버스 경과 (분)", 0, 60, 25)
@@ -179,7 +187,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# [2] 광고 배너 (빨간 박스 대체)
+# [2] 광고 배너
 st.markdown("""
 <div class="ad-banner">
     <span class="ad-tag">AD</span>
@@ -187,12 +195,14 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# [3] 사용자 입력 (투명하게)
+# [3] 사용자 입력 (Input Section) - 배경색 흰색이라 글씨 검정 강제
+st.markdown('<div class="input-container">', unsafe_allow_html=True)
 c1, c2 = st.columns(2)
 with c1:
     target_station = st.selectbox("출발 정류장", list(station_db.keys()))
 with c2:
     target_bus = st.selectbox("탑승 버스", station_db[target_station]["buses"])
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 로직 계산 ---
 origin = USER_ORIGIN
@@ -200,7 +210,7 @@ dest = station_db[target_station]["coords"]
 curr_pos = interpolate_pos(origin, dest, journey_progress / 100)
 dist_km = calculate_distance(curr_pos[0], curr_pos[1], dest[0], dest[1])
 
-# 날씨 저항 적용
+# 날씨 저항
 resist = 1.0
 if "🌧️" in weather: resist = 0.8
 elif "❄️" in weather: resist = 0.7
@@ -210,7 +220,7 @@ req_time = 0 if dist_km < 0.02 else (dist_km / real_speed) * 60
 
 base_queue = 0 if "빈 자리" in prev_bus_status else 25
 q_future = base_queue + int(admin_time_passed * 0.5) + (0.5 * req_time)
-bus_eta = 15 # 버스 도착 시간 (고정)
+bus_eta = 15
 
 # 상태 결정
 if journey_progress >= 100:
@@ -240,10 +250,10 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# [5] 정보 그리드 (위치 변경 적용)
+# [5] 정보 그리드
 seat_cls = "txt-red" if admin_seats < 5 else "txt-green"
 
-# [FIX] 시간 초단위 변환 함수
+# 시간 변환 함수 (초단위)
 def get_min_sec(t):
     m = int(t)
     s = int((t - m) * 60)
@@ -256,21 +266,18 @@ st.markdown(f"""
 <div class="grid-value">{int(q_future)}명</div>
 <div class="grid-sub">현재 {int(base_queue + admin_time_passed*0.5)}명</div>
 </div>
-
 <div class="grid-card">
-<div class="grid-label">🚌 버스 도착 전</div>
+<div class="grid-label">🚌 버스 도착까지</div>
 <div class="grid-value">{bus_eta}분</div>
 <div class="grid-sub">{target_bus}</div>
 </div>
-
 <div class="grid-card">
 <div class="grid-label">💺 잔여 좌석</div>
 <div class="grid-value {seat_cls}">{admin_seats}석</div>
 <div class="grid-sub">여유 {admin_seats-5 if admin_seats>5 else 0}석</div>
 </div>
-
 <div class="grid-card">
-<div class="grid-label">⏱ 내 소요 시간</div>
+<div class="grid-label">⏱ 예상 소요시간</div>
 <div class="grid-value">{get_min_sec(req_time)}</div>
 <div class="grid-sub">속도 {real_speed:.1f}km/h</div>
 </div>
