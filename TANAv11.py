@@ -4,6 +4,7 @@ import numpy as np
 import math
 import pydeck as pdk
 import base64
+import textwrap
 
 # 페이지 설정
 st.set_page_config(page_title="타나(TANA)", page_icon="🚦", layout="centered")
@@ -43,12 +44,28 @@ st.markdown("""
         box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; gap: 8px; align-items: center;
     }
 
-    /* 3. 지도 컨테이너 */
-    .map-container {
-        margin-bottom: 20px; border-radius: 15px; overflow: hidden; border: 1px solid #eee;
+    /* UI 박스 공통 */
+    .search-container { 
+        background-color: #fff; border: 1px solid #e0e0e0; border-radius: 15px; 
+        padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 10px; 
     }
-
-    /* 4. 신호등 결과 박스 */
+    .info-text-box { 
+        font-size: 16px; color: #495057; background-color: #f1f3f5; 
+        padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px solid #dee2e6; font-weight: 600;
+    }
+    
+    /* 게이지 바 */
+    .gauge-label {
+        display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: #343a40; margin-bottom: 5px;
+    }
+    .gauge-bg {
+        width: 100%; height: 12px; background-color: #e9ecef; border-radius: 6px; position: relative; overflow: hidden; margin-bottom: 15px;
+    }
+    .gauge-fill {
+        height: 100%; border-radius: 6px; transition: width 0.5s ease;
+    }
+    
+    /* 신호등 결과 박스 */
     .status-box { 
         padding: 25px 20px; border-radius: 20px; text-align: center; color: white; 
         margin-top: 20px; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
@@ -68,24 +85,10 @@ st.markdown("""
     .info-label { display: block; font-size: 11px; opacity: 0.9; margin-bottom: 3px; }
     .info-val { display: block; font-size: 16px; font-weight: 800; }
 
-    /* 아바타 & 게이지 */
+    /* 아바타 */
     .avatar-container { text-align: center; margin-bottom: 5px; height: 80px; display: flex; align-items: center; justify-content: center; }
     .avatar-img { height: 80px; width: auto; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); } 
     .avatar-text { font-size: 60px; line-height: 1.0; }
-    
-    .gauge-bg { width: 100%; height: 10px; background-color: #e9ecef; border-radius: 5px; position: relative; overflow: hidden; margin-bottom: 5px; }
-    .gauge-fill { height: 100%; border-radius: 5px; transition: width 0.5s ease; }
-    .gauge-text { display: flex; justify-content: space-between; font-size: 12px; color: #868e96; margin-bottom: 15px; font-weight: 600; }
-    
-    /* UI 박스 공통 */
-    .search-container { 
-        background-color: #fff; border: 1px solid #e0e0e0; border-radius: 15px; 
-        padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 10px; 
-    }
-    .info-text-box { 
-        font-size: 16px; color: #495057; background-color: #f1f3f5; 
-        padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px solid #dee2e6; font-weight: 600;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -126,7 +129,7 @@ def format_time(minutes):
 # --------------------------------------------------
 # 📍 데이터
 # --------------------------------------------------
-USER_ORIGIN = [37.3835, 126.6550] # 2기숙사 (기본값)
+USER_ORIGIN = [37.3835, 126.6550] 
 
 station_db = {
     "연세대학교 (국제)": {
@@ -144,10 +147,10 @@ station_db = {
 }
 
 # --------------------------------------------------
-# 🔧 Admin Console
+# 🔧 Admin Console (V20)
 # --------------------------------------------------
 with st.sidebar:
-    st.header("🎬 TANA V19.1 Fix")
+    st.header("🎬 TANA V20 Final")
     
     st.subheader("1. 버스 상황")
     prev_bus_status = st.radio("출발 상태", ["🟢 빈 자리 남고 출발 (리셋 O)", "🔴 만석으로 출발 (리셋 X)"], index=0)
@@ -171,26 +174,26 @@ with st.sidebar:
 
 # 1. 타이틀 & 배너
 st.title("타나(TANA)")
-st.markdown("""
-<div class="ad-box">
-    <span class="ad-badge">AD</span>
-    <span>기다리는 시간, <b>스타벅스</b>에서 따뜻하게 보내세요 (쿠폰받기)</span>
-</div>
-""", unsafe_allow_html=True)
+st.markdown(textwrap.dedent("""
+    <div class="ad-box">
+        <span class="ad-badge">AD</span>
+        <span>기다리는 시간, <b>스타벅스</b>에서 따뜻하게 보내세요 (쿠폰받기)</span>
+    </div>
+"""), unsafe_allow_html=True)
 
 # 2. 프로필
 st.markdown(f"""
-<div class="profile-container">
-    <div class="profile-left">
-        <div class="profile-img">👤</div>
-        <div class="profile-name">박연세 님</div>
+    <div class="profile-container">
+        <div class="profile-left">
+            <div class="profile-img">👤</div>
+            <div class="profile-name">박연세 님</div>
+        </div>
+        <div class="weather-badge">
+            <span>{current_weather}</span>
+            <span style="color:#ced4da;">|</span>
+            <span>{admin_temp}℃</span>
+        </div>
     </div>
-    <div class="weather-badge">
-        <span>{current_weather}</span>
-        <span style="color:#ced4da;">|</span>
-        <span>{admin_temp}℃</span>
-    </div>
-</div>
 """, unsafe_allow_html=True)
 
 # 3. 지도 (Mini Map)
@@ -237,37 +240,49 @@ r = pdk.Deck(
 st.pydeck_chart(r, use_container_width=True, key=f"map_{st.session_state.map_key}")
 
 
-# 4. 속도 & 아바타
+# 4. [핵심] 속도 & 진행률 게이지 (재미 요소)
 resist_factor = get_weather_factor(current_weather)
 effective_speed = admin_speed * resist_factor
 
-# 아바타 결정
+# 아바타
 if effective_speed < 4.0: img_file, emoji_backup, pace_color = "img_slow.png", "🐢", "#28a745"
 elif effective_speed < 7.0: img_file, emoji_backup, pace_color = "img_walk.png", "🚶", "#17a2b8"
 elif effective_speed < 10.0: img_file, emoji_backup, pace_color = "img_run.png", "🏃", "#ffc107"
 else: img_file, emoji_backup, pace_color = "img_rocket.png", "🚀", "#dc3545"
 
-# 이미지 표시
 img_base64 = get_img_as_base64(img_file)
-if img_base64:
-    st.markdown(f'<div class="avatar-container"><img src="data:image/png;base64,{img_base64}" class="avatar-img"></div>', unsafe_allow_html=True)
-else:
-    st.markdown(f'<div class="avatar-container"><div class="avatar-text">{emoji_backup}</div></div>', unsafe_allow_html=True)
+avatar_html = f'<img src="data:image/png;base64,{img_base64}" class="avatar-img">' if img_base64 else f'<div class="avatar-text">{emoji_backup}</div>'
+st.markdown(f'<div class="avatar-container">{avatar_html}</div>', unsafe_allow_html=True)
 
-# 게이지
+# 게이지 1: 평균 페이스
 percent_speed = min((effective_speed / 15.0) * 100, 100)
 st.markdown(f"""
-<div class="gauge-bg">
-    <div class="gauge-fill" style="width: {percent_speed}%; background-color: {pace_color};"></div>
-</div>
-<div class="gauge-text">
-    <span>현재 페이스</span>
-    <span>{effective_speed:.1f} km/h</span>
-</div>
+    <div class="gauge-label">
+        <span>평균 페이스</span>
+        <span style="color:{pace_color}">{effective_speed:.1f} km/h</span>
+    </div>
+    <div class="gauge-bg">
+        <div class="gauge-fill" style="width: {percent_speed}%; background-color: {pace_color};"></div>
+    </div>
+""", unsafe_allow_html=True)
+
+# 게이지 2: 목적지 진행률 (거리따라 색 변함)
+if journey_progress < 30: progress_color = "#dc3545" # 빨강 (멀음)
+elif journey_progress < 70: progress_color = "#ffc107" # 노랑 (중간)
+else: progress_color = "#28a745" # 초록 (도착 임박)
+
+st.markdown(f"""
+    <div class="gauge-label">
+        <span>정류장까지 이동 중...</span>
+        <span>🏁 {journey_progress}%</span>
+    </div>
+    <div class="gauge-bg">
+        <div class="gauge-fill" style="width: {journey_progress}%; background-color: {progress_color};"></div>
+    </div>
 """, unsafe_allow_html=True)
 
 
-# 5. 최종 계산
+# 5. 최종 결과
 remain_distance = calculate_distance(current_user_coords[0], current_user_coords[1], dest_coords[0], dest_coords[1])
 required_time = 0 if remain_distance < 0.02 else (remain_distance / effective_speed) * 60
 
@@ -278,7 +293,7 @@ current_queue = base_queue + int(admin_time_passed * inflow_rate)
 future_queue = current_queue + (inflow_rate * required_time)
 final_bus_time_for_calc = 15 
 
-# 상태 판단
+# 상태 판단 (신호등 Logic)
 if journey_progress >= 100:
     bg_class, icon, msg, sub_msg = "arrival-bg", "🏁", "도착 완료", "정류장에 도착했습니다!"
 elif required_time > final_bus_time_for_calc:
@@ -290,35 +305,39 @@ elif future_queue > (admin_seats - 5):
 else:
     bg_class, icon, msg, sub_msg = "success-bg", "🟢", "여유 있음", f"편안하게 가세요"
 
-# [Fix] HTML 태그 왼쪽 정렬 (들여쓰기 제거)
-st.markdown(f"""
+# [Final Fix: textwrap 사용]
+html_content = textwrap.dedent(f"""
 <div class="status-box {bg_class}">
-<div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>
-<h2 style="margin:0; color: inherit; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">{msg}</h2>
-<p style="margin-top: 5px; font-size: 18px; color: inherit; font-weight: 500;">{sub_msg}</p>
-<div class="info-grid">
-<div class="info-item">
-<span class="info-label">버스 도착</span>
-<span class="info-val">{final_bus_time_for_calc}분 후</span>
+    <div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>
+    <h2 style="margin:0; color: inherit; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">{msg}</h2>
+    <p style="margin-top: 5px; font-size: 18px; color: inherit; font-weight: 500;">{sub_msg}</p>
+    
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="info-label">버스 도착</span>
+            <span class="info-val">{final_bus_time_for_calc}분 후</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">잔여 좌석</span>
+            <span class="info-val">{admin_seats}석</span>
+        </div>
+        <div class="info-item" style="border-right: none;">
+            <span class="info-label">예상 대기</span>
+            <span class="info-val">{int(future_queue)}명</span>
+        </div>
+    </div>
+    
+    <div class="info-grid" style="margin-top:10px; background-color:rgba(255,255,255,0.2);">
+        <div class="info-item">
+            <span class="info-label">남은 거리</span>
+            <span class="info-val">{int(remain_distance*1000)}m</span>
+        </div>
+        <div class="info-item" style="border-right: none;">
+            <span class="info-label">도착 예정</span>
+            <span class="info-val">{format_time(required_time)}</span>
+        </div>
+    </div>
 </div>
-<div class="info-item">
-<span class="info-label">잔여 좌석</span>
-<span class="info-val">{admin_seats}석</span>
-</div>
-<div class="info-item" style="border-right: none;">
-<span class="info-label">예상 대기</span>
-<span class="info-val">{int(future_queue)}명</span>
-</div>
-</div>
-<div class="info-grid" style="margin-top:10px; background-color:rgba(255,255,255,0.2);">
-<div class="info-item">
-<span class="info-label">남은 거리</span>
-<span class="info-val">{int(remain_distance*1000)}m</span>
-</div>
-<div class="info-item" style="border-right: none;">
-<span class="info-label">도착 예정</span>
-<span class="info-val">{format_time(required_time)}</span>
-</div>
-</div>
-</div>
-""", unsafe_allow_html=True)
+""")
+
+st.markdown(html_content, unsafe_allow_html=True)
