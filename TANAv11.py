@@ -15,79 +15,32 @@ st.set_page_config(page_title="타나(TANA)", page_icon="🚦", layout="centered
 st.markdown("""
 <style>
     .main { background-color: #ffffff; }
-    
-    /* 광고 배너 */
-    .ad-box {
-        background-color: #f8f9fa; border: 1px dashed #ced4da; border-radius: 8px;
-        padding: 12px; text-align: center; margin-bottom: 20px; color: #868e96; font-size: 13px;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .ad-badge {
-        background-color: #adb5bd; color: white; font-size: 10px; padding: 2px 6px; 
-        border-radius: 4px; margin-right: 8px; font-weight: bold;
-    }
-
-    /* 프로필 & 날씨 */
-    .profile-container {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 5px 10px; margin-bottom: 10px;
-    }
+    .profile-container { display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; margin-bottom: 10px; }
     .profile-left { display: flex; align-items: center; }
-    .profile-img { 
-        width: 40px; height: 40px; border-radius: 50%; background-color: #e9ecef; 
-        display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 10px; 
-    }
+    .profile-img { width: 40px; height: 40px; border-radius: 50%; background-color: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-right: 10px; }
     .profile-name { font-size: 16px; font-weight: 800; color: #2c3e50; }
-    .weather-badge {
-        font-size: 14px; font-weight: 600; color: #495057; background-color: #fff;
-        padding: 6px 14px; border-radius: 20px; border: 1px solid #dee2e6; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; gap: 8px; align-items: center;
-    }
-
-    /* UI 박스 공통 */
-    .search-container { 
-        background-color: #fff; border: 1px solid #e0e0e0; border-radius: 15px; 
-        padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 10px; 
-    }
-    .info-text-box { 
-        font-size: 16px; color: #495057; background-color: #f1f3f5; 
-        padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px solid #dee2e6; font-weight: 600;
-    }
-    
-    /* 게이지 바 */
-    .gauge-label {
-        display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: #343a40; margin-bottom: 5px;
-    }
-    .gauge-bg {
-        width: 100%; height: 12px; background-color: #e9ecef; border-radius: 6px; position: relative; overflow: hidden; margin-bottom: 15px;
-    }
-    .gauge-fill {
-        height: 100%; border-radius: 6px; transition: width 0.5s ease, background-color 0.5s ease;
-    }
-    
-    /* 신호등 결과 박스 */
+    .weather-badge { font-size: 14px; font-weight: 600; color: #495057; background-color: #fff; padding: 6px 14px; border-radius: 20px; border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.03); display: flex; gap: 8px; align-items: center; }
+    .search-container { background-color: #fff; border: 1px solid #e0e0e0; border-radius: 15px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 10px; }
+    .info-text-box { font-size: 16px; color: #495057; background-color: #f1f3f5; padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; border: 1px solid #dee2e6; font-weight: 600; }
+    .gauge-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: #343a40; margin-bottom: 5px; }
+    .gauge-bg { width: 100%; height: 12px; background-color: #e9ecef; border-radius: 6px; position: relative; overflow: hidden; margin-bottom: 15px; }
+    .gauge-fill { height: 100%; border-radius: 6px; transition: width 0.5s ease, background-color 0.5s ease; }
     .status-box { padding: 30px 20px; border-radius: 20px; text-align: center; color: white; margin-top: 20px; transition: all 0.3s ease; }
     .success-bg { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); box-shadow: 0 10px 25px rgba(40, 167, 69, 0.3); }
     .warning-bg { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.1); box-shadow: 0 10px 25px rgba(255, 193, 7, 0.3); }
     .danger-bg { background: linear-gradient(135deg, #dc3545 0%, #c92a2a 100%); box-shadow: 0 10px 25px rgba(220, 53, 69, 0.3); }
     .arrival-bg { background: linear-gradient(135deg, #007bff 0%, #0062cc 100%); box-shadow: 0 10px 25px rgba(0, 123, 255, 0.3); }
-
-    /* 결과창 내부 디테일 */
-    .status-detail-container {
-        display: flex; justify-content: space-around; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);
-    }
+    .status-detail-container { display: flex; justify-content: space-around; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3); }
     .detail-item-box { flex: 1; text-align: center; }
     .detail-divider { width: 1px; height: 30px; background-color: rgba(255,255,255,0.3); }
     .d-label { display: block; font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
     .d-val { display: block; font-size: 18px; font-weight: 800; }
-
-    /* 하단 요약 정보 */
     .summary-row { display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 15px; }
-
-    /* 아바타 */
     .avatar-container { text-align: center; margin-bottom: 5px; height: 80px; display: flex; align-items: center; justify-content: center; }
     .avatar-img { height: 80px; width: auto; object-fit: contain; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.1)); } 
     .avatar-text { font-size: 60px; line-height: 1.0; }
+    .ad-box { background-color:#f8f9fa; border:1px dashed #ced4da; border-radius:8px; padding:12px; text-align:center; margin-bottom:20px; color:#868e96; font-size:13px; display:flex; align-items:center; justify-content:center; }
+    .ad-badge { background-color:#adb5bd; color:white; font-size:10px; padding:2px 6px; border-radius:4px; margin-right:8px; font-weight:bold; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -126,35 +79,34 @@ def format_time(minutes):
     return f"{mins}분 {secs}초"
 
 # --------------------------------------------------
-# 📍 데이터 (정확한 좌표 반영)
+# 📍 데이터 (좌표 수정 완료)
 # --------------------------------------------------
-# [Fix] 내 위치 정의 (이게 빠져서 에러났었음!)
+# 내 위치 (시연용 고정: 송도 2기숙사)
 USER_ORIGIN = [37.3835, 126.6550]
 
-# 정류장 데이터
 station_db = {
     "연세대학교 (국제)": {
         "coords": [37.3815, 126.6580],
         "buses": ["M6724", "9201"]
     },
+    # 박문여고/중학교 실제 위치 (캠퍼스타운역 인근)
     "박문여자고등학교": {
-        "coords": [37.3948, 126.6672], # 송도 캠퍼스 좌표 수정
+        "coords": [37.3895, 126.6700], 
         "buses": ["순환41", "9"]
     },
     "박문중학교": {
-        "coords": [37.3932, 126.6682], # 송도 캠퍼스 좌표 수정
+        "coords": [37.3905, 126.6715], 
         "buses": ["순환41"]
     }
 }
 
 # --------------------------------------------------
-# 🔧 Admin Console (V16)
+# 🔧 Admin Console
 # --------------------------------------------------
 with st.sidebar:
-    st.header("🎬 TANA Studio V16")
+    st.header("🎬 TANA Studio V17")
     
     st.subheader("1. 버스 상황")
-    
     # 리셋 포인트 로직
     prev_bus_status = st.radio(
         "이전 버스 출발 상태", 
@@ -163,7 +115,7 @@ with st.sidebar:
     )
     
     admin_time_passed = st.slider("이전 버스 경과 (분)", 0, 60, 25)
-    admin_seats = st.slider("현재 버스 잔여 좌석 (석)", 0, 45, 15)
+    admin_seats = st.slider("잔여 좌석 (석)", 0, 45, 15)
     
     st.subheader("2. 날씨 & 기온")
     current_weather = st.radio("날씨", ["맑음 ☀️", "흐림 ☁️", "비 🌧️", "눈 ❄️"], horizontal=True)
@@ -177,7 +129,7 @@ with st.sidebar:
 
 
 # --------------------------------------------------
-# 📱 메인 화면 UI
+# 📱 메인 화면
 # --------------------------------------------------
 
 # 1. 타이틀 & 광고
@@ -223,13 +175,15 @@ dest_coords = station_db[target_station_name]["coords"]
 current_user_coords = interpolate_pos(origin_coords, dest_coords, journey_progress / 100)
 
 
-# 4. [중요] 리셋 포인트 로직 및 상태 메시지
+# 4. 리셋 포인트 상태 메시지
 is_reset = "빈 자리" in prev_bus_status
 
 if is_reset:
+    # 리셋 포인트: 기본 0명 + 시간 지날수록 증가
     base_queue = 0
     status_badge = "✨ 리셋 포인트 (Reset Point)"
 else:
+    # 리셋 아님: 기본 25명 + 시간 지날수록 증가
     base_queue = 25
     status_badge = "⚠️ 이월 인원 누적 (Backlog)"
 
@@ -237,12 +191,19 @@ status_text = f"📡 이전 {target_bus} 버스가 떠난 지 <b>{admin_time_pas
 st.markdown(f'<div class="info-text-box">{status_text}</div>', unsafe_allow_html=True)
 
 
-# 5. 지도 시각화
+# 5. 지도 시각화 (현위치 버튼 강제 리프레시 로직)
+# 지도 키(key) 관리를 위한 세션 상태 초기화
+if 'map_key' not in st.session_state:
+    st.session_state.map_key = 0
 if 'view_state' not in st.session_state:
     st.session_state.view_state = pdk.ViewState(latitude=(origin_coords[0]+dest_coords[0])/2, longitude=(origin_coords[1]+dest_coords[1])/2, zoom=15)
 
+# 버튼 클릭 시 -> map_key를 증가시켜 강제로 지도를 다시 그리게 함 (Re-mount)
 if st.button("📍 현위치로 지도 이동"):
     st.session_state.view_state = pdk.ViewState(latitude=current_user_coords[0], longitude=current_user_coords[1], zoom=15)
+    st.session_state.map_key += 1 # Key를 바꿔서 강제 리프레시
+    
+# 진행률이 바뀌어도 뷰포트 따라가기
 elif journey_progress > 0: 
     st.session_state.view_state = pdk.ViewState(latitude=current_user_coords[0], longitude=current_user_coords[1], zoom=16)
 
@@ -259,9 +220,11 @@ with st.expander("🗺️ 실시간 경로 추적 (View Map)", expanded=True):
             pdk.Layer("PathLayer", path_data, get_path="path", width_scale=20, width_min_pixels=3, get_color=[180,180,180,100]),
             pdk.Layer("ScatterplotLayer", point_data, get_position='[lon, lat]', get_color='color', get_radius='radius')
         ],
-        initial_view_state=st.session_state.view_state
+        initial_view_state=st.session_state.view_state,
+        # key 값이 바뀔 때마다 지도가 새로 그려짐 (버튼 먹통 해결!)
     )
-    st.pydeck_chart(r)
+    # pydeck_chart에 key 인자를 넣어서 강제 리프레시
+    st.pydeck_chart(r, use_container_width=True, key=f"map_{st.session_state.map_key}")
 
 
 # 6. 속도 & 진행률
@@ -306,7 +269,7 @@ st.markdown(f"""
 st.divider()
 
 
-# 7. 최종 결과
+# 7. 최종 결과 (수식 수정)
 remain_distance = calculate_distance(current_user_coords[0], current_user_coords[1], dest_coords[0], dest_coords[1])
 
 if remain_distance < 0.02: 
@@ -316,7 +279,10 @@ else:
     required_time = (remain_distance / effective_speed) * 60
 
 inflow_rate = 3.0 
+# [핵심 수정] 대기열 계산: (기본값) + (시간 * 유입률)
+# 시간이 0이어도 기본값(이월 인원)은 있어야 함
 current_queue = base_queue + int(admin_time_passed * inflow_rate)
+
 future_queue = current_queue + (inflow_rate * required_time)
 final_bus_time_for_calc = 15 
 
@@ -332,7 +298,7 @@ elif future_queue > (admin_seats - 5):
 else:
     bg_class, icon, msg, sub_msg = "success-bg", "🟢", "여유 있음", f"편안하게 가세요"
 
-# HTML 렌더링
+# HTML 렌더링 (들여쓰기 제거)
 html_content = textwrap.dedent(f"""
 <div class="status-box {bg_class}">
     <div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>
