@@ -8,13 +8,13 @@ import textwrap
 st.set_page_config(page_title="TANA", page_icon="🚦", layout="centered")
 
 # --------------------------------------------------
-# 🎨 CSS 스타일 (모바일 강제 2x2 그리드 적용)
+# 🎨 CSS 스타일 (Live Tracking 통합 & Input 추가)
 # --------------------------------------------------
 st.markdown("""
 <style>
     @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
     
-    /* 다크모드 강제 해제 및 전체 배경 고정 */
+    /* 전체 설정 */
     .stApp {
         background-color: #F2F2F7 !important;
         font-family: 'Pretendard', sans-serif;
@@ -23,82 +23,88 @@ st.markdown("""
     /* 헤더 */
     .app-header {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 10px 5px 15px 5px;
-        margin-bottom: 10px;
+        padding: 10px 5px 10px 5px;
     }
-    .app-logo { font-size: 26px; font-weight: 900; color: #1C1C1E; }
+    .app-logo { font-size: 24px; font-weight: 900; color: #1C1C1E; letter-spacing: -1px; }
     .weather-pill { 
-        background: white; padding: 6px 14px; border-radius: 20px; 
-        font-size: 14px; font-weight: 700; color: #1C1C1E;
+        background: white; padding: 6px 12px; border-radius: 20px; 
+        font-size: 13px; font-weight: 700; color: #1C1C1E;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
-    /* 1. 액션 카드 (Hero) - 중앙 정렬 강제 */
+    /* [New] 입력 카드 (Input Section) */
+    .input-container {
+        background: white; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    }
+    /* Streamlit Selectbox 스타일 덮어쓰기 (최대한 깔끔하게) */
+    .stSelectbox label { font-size: 12px; font-weight: 700; color: #8E8E93; }
+    
+    /* [Update] 액션 카드 (Hero) - 하단에 진행바 통합 */
     .hero-card {
-        border-radius: 26px; padding: 30px 20px; 
-        text-align: center; color: white; margin-bottom: 25px;
+        border-radius: 26px; padding: 35px 20px 50px 20px; /* 하단 패딩 늘림 (바 공간) */
+        text-align: center; color: white; margin-bottom: 20px;
         box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        position: relative; overflow: hidden;
+        animation: pulse 2s infinite ease-in-out;
     }
     .hero-green { background: linear-gradient(135deg, #34C759, #30B0C7); }
     .hero-yellow { background: linear-gradient(135deg, #FF9F0A, #FF375F); }
     .hero-red { background: linear-gradient(135deg, #FF453A, #FF375F); }
     .hero-blue { background: linear-gradient(135deg, #007AFF, #5AC8FA); }
 
-    .hero-icon { font-size: 48px; margin-bottom: 10px; line-height: 1; }
-    .hero-title { font-size: 32px; font-weight: 800; margin: 0; line-height: 1.2; text-align: center; width: 100%; }
-    .hero-sub { font-size: 15px; font-weight: 600; margin-top: 8px; opacity: 0.95; text-align: center; }
+    .hero-icon { font-size: 44px; display: block; margin-bottom: 5px; line-height: 1; }
+    .hero-title { font-size: 32px; font-weight: 800; margin: 0; line-height: 1.2; }
+    .hero-sub { font-size: 15px; font-weight: 600; margin-top: 5px; opacity: 0.95; }
 
-    /* 2. 라이브 루트 - 아바타 잘림 방지 */
-    .route-container {
-        background: white; border-radius: 22px; padding: 30px 20px 20px 20px; margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    /* [New] Hero 내부 미니 트래킹 바 */
+    .hero-progress-area {
+        position: absolute; bottom: 20px; left: 25px; right: 25px;
+        height: 20px; display: flex; align-items: center;
     }
-    .route-header { 
-        font-size: 13px; color: #8E8E93; font-weight: 700; margin-bottom: 25px;
-        display: flex; justify-content: space-between;
+    .mini-track-bg {
+        width: 100%; height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px; position: relative;
     }
-    .track-bg {
-        width: 100%; height: 8px; background: #E5E5EA; border-radius: 4px; position: relative;
+    .mini-track-fill {
+        height: 100%; background: white; border-radius: 3px; transition: width 0.3s ease;
+        box-shadow: 0 0 10px rgba(255,255,255,0.5);
     }
-    .track-fill {
-        height: 100%; border-radius: 4px; transition: width 0.3s ease;
+    .mini-avatar {
+        position: absolute; top: 50%; transform: translate(-50%, -50%);
+        font-size: 20px; transition: left 0.3s ease; z-index: 10;
+        text-shadow: 0 2px 5px rgba(0,0,0,0.2);
     }
-    .avatar-wrapper {
-        position: absolute; top: 50%; transform: translate(-50%, -50%); 
-        transition: left 0.3s ease; z-index: 10;
-        /* 아바타가 위로 튀어나와도 보이게 */
-        margin-top: -5px; 
-    }
-    .avatar-circle {
-        background: white; border: 3px solid white; border-radius: 50%; 
-        width: 45px; height: 45px; 
-        display: flex; align-items: center; justify-content: center;
-        font-size: 26px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    .mini-text {
+        position: absolute; bottom: -18px; width: 100%; text-align: center;
+        font-size: 10px; color: rgba(255,255,255,0.8); font-weight: 600;
     }
 
-    /* 3. 정보 그리드 (CSS Grid 강제 적용 - 모바일에서도 2열) */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.005); }
+        100% { transform: scale(1); }
+    }
+
+    /* 정보 그리드 (CSS Grid 강제 적용) */
     .info-grid-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr; /* 1:1 비율 강제 */
-        gap: 15px; /* 카드 사이 간격 */
-        width: 100%;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;
     }
-    
     .grid-card {
-        background: white; border-radius: 18px; padding: 20px 10px; text-align: center;
+        background: white; border-radius: 18px; padding: 18px 10px; text-align: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
         display: flex; flex-direction: column; justify-content: center; align-items: center;
         height: 100%;
     }
-    .grid-label { font-size: 12px; color: #8E8E93; font-weight: 700; margin-bottom: 5px; white-space: nowrap; }
+    .grid-label { font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px; }
     .grid-value { font-size: 20px; color: #1C1C1E; font-weight: 800; letter-spacing: -0.5px; }
-    .grid-sub { font-size: 11px; color: #AEAEB2; margin-top: 4px; font-weight: 500; }
+    .grid-sub { font-size: 10px; color: #AEAEB2; margin-top: 3px; font-weight: 500; }
     
     .txt-red { color: #FF453A !important; }
     .txt-blue { color: #007AFF !important; }
     .txt-green { color: #34C759 !important; }
+    
+    /* 모바일 상단 여백 제거 */
+    .block-container { padding-top: 1rem; padding-bottom: 5rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -126,22 +132,37 @@ def interpolate_pos(start, end, progress):
     return [lat, lon]
 
 # --------------------------------------------------
-# 🔧 Admin Console
+# 🖥️ UI 구조 (Layout)
 # --------------------------------------------------
+
+# [1] 헤더
+st.markdown("""
+<div class="app-header">
+    <div class="app-logo">TANA</div>
+    <div class="weather-pill">☀️ 18°C</div>
+</div>
+""", unsafe_allow_html=True)
+
+# [2] 사용자 입력 (Input Section) - 메인 상단 배치
+st.markdown('<div class="input-container">', unsafe_allow_html=True)
+c1, c2 = st.columns(2)
+with c1:
+    target_station = st.selectbox("출발 정류장", list(station_db.keys()))
+with c2:
+    target_bus = st.selectbox("탑승 버스", station_db[target_station]["buses"])
+st.markdown('</div>', unsafe_allow_html=True)
+
+# --- Admin Controls (Sidebar) ---
 with st.sidebar:
     st.header("🎬 Director Mode")
-    prev_bus_status = st.radio("출발 상태", ["🟢 빈 자리 남고 출발", "🔴 만석으로 출발"], index=0)
-    admin_time_passed = st.slider("이전 버스 경과 (분)", 0, 60, 25)
-    admin_seats = st.slider("잔여 좌석 (석)", 0, 45, 4)
+    journey_progress = st.slider("진행률 (%)", 0, 100, 0)
+    admin_speed = st.slider("속도 (km/h)", 2.0, 15.0, 5.0)
+    admin_time_passed = st.slider("버스 경과 (분)", 0, 60, 25)
+    admin_seats = st.slider("잔여 좌석", 0, 45, 4)
     weather = st.radio("날씨", ["☀️", "🌧️", "❄️"], horizontal=True)
-    journey_progress = st.slider("목적지까지 진행률 (%)", 0, 100, 0)
-    admin_speed = st.slider("기초 속도 (km/h)", 2.0, 15.0, 5.0)
-    target_station = st.selectbox("목적지", list(station_db.keys()))
-    target_bus = st.selectbox("버스", station_db[target_station]["buses"])
+    prev_bus_status = st.radio("상태", ["🟢 빈 자리", "🔴 만석"], index=0)
 
-# --------------------------------------------------
-# 🖥️ 메인 로직
-# --------------------------------------------------
+# --- 로직 계산 ---
 origin = USER_ORIGIN
 dest = station_db[target_station]["coords"]
 curr_pos = interpolate_pos(origin, dest, journey_progress / 100)
@@ -152,66 +173,38 @@ base_queue = 0 if "빈 자리" in prev_bus_status else 25
 q_future = base_queue + int(admin_time_passed * 0.5) + (0.5 * req_time)
 bus_eta = 15
 
+# 상태 결정
 if journey_progress >= 100:
     theme, icon, title, sub = "hero-blue", "🏁", "도착 완료", "수고하셨습니다!"
 elif req_time > bus_eta:
     theme, icon, title, sub = "hero-red", "🚫", "탑승 불가", f"버스 도착 {bus_eta}분 전"
 elif q_future > admin_seats:
-    theme, icon, title, sub = "hero-red", "😱", "포기해", f"예상 대기 {int(q_future)}명 (만석)"
+    theme, icon, title, sub = "hero-red", "😱", "포기해", f"대기 {int(q_future)}명 (만석)"
 elif q_future > (admin_seats - 5):
     theme, icon, title, sub = "hero-yellow", "🏃", "지금 뛰어!", f"막차 가능성 있음 ({int(admin_seats)}석)"
 else:
     theme, icon, title, sub = "hero-green", "☕️", "여유 있음", "천천히 걸어가세요"
 
-# --------------------------------------------------
-# 📱 UI 렌더링
-# --------------------------------------------------
+# [3] 액션 카드 (Hero) + [New] 내부 통합 트래킹
+avatar = '🚀' if admin_speed > 10 else ('🏃' if admin_speed > 6 else '🚶')
 
-# [1] 헤더
-st.markdown(f"""
-<div class="app-header">
-    <div class="app-logo">TANA</div>
-    <div class="weather-pill">{weather} 18°C</div>
-</div>
-""", unsafe_allow_html=True)
-
-# [2] 액션 카드 (Hero)
 st.markdown(f"""
 <div class="hero-card {theme}">
     <span class="hero-icon">{icon}</span>
     <h1 class="hero-title">{title}</h1>
     <div class="hero-sub">{sub}</div>
-</div>
-""", unsafe_allow_html=True)
-
-# [3] 라이브 루트 (Visualization)
-bar_color = "#34C759" if "green" in theme else ("#FF9F0A" if "yellow" in theme else "#FF453A")
-if "blue" in theme: bar_color = "#007AFF"
-
-st.markdown(f"""
-<div class="route-container">
-    <div class="route-header">
-        <span>LIVE TRACKING</span>
-        <span>{int(dist_km*1000)}M 남음</span>
-    </div>
-    <div style="position: relative; height: 50px;">
-        <div class="track-bg">
-            <div class="track-fill" style="width: {journey_progress}%; background: {bar_color};"></div>
+    
+    <div class="hero-progress-area">
+        <div class="mini-track-bg">
+            <div class="mini-track-fill" style="width: {journey_progress}%;"></div>
         </div>
-        <div class="avatar-wrapper" style="left: {journey_progress}%;">
-            <div class="avatar-circle">
-                {'🚀' if admin_speed > 10 else ('🏃' if admin_speed > 6 else '🚶')}
-            </div>
-        </div>
-    </div>
-    <div style="text-align:center; margin-top:10px; font-size:12px; color:#8E8E93;">
-        현재 속도 <b>{admin_speed} km/h</b>로 이동 중
+        <div class="mini-avatar" style="left: {journey_progress}%;">{avatar}</div>
+        <div class="mini-text">{int(dist_km*1000)}m 남음</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# [4] 정보 그리드 (CSS Grid 강제 적용!)
-# st.columns 대신 HTML로 통째로 짜서 레이아웃 고정
+# [4] 정보 그리드 (Info Grid) - 2x2 강제
 seat_cls = "txt-red" if admin_seats < 5 else "txt-green"
 
 st.markdown(f"""
