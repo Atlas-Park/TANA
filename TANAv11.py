@@ -8,7 +8,7 @@ import textwrap
 st.set_page_config(page_title="TANA", page_icon="🚦", layout="centered")
 
 # --------------------------------------------------
-# 🎨 CSS 스타일 (수정: 헤더 여백 확보 & 들여쓰기 이슈 해결)
+# 🎨 CSS 스타일 (Final: 광고 추가 & 노란색 수정 & 그리드 변경)
 # --------------------------------------------------
 st.markdown("""
 <style>
@@ -20,41 +20,53 @@ st.markdown("""
         font-family: 'Pretendard', sans-serif;
     }
     
-    /* [Fix] 모바일 상단 여백 확보 (헤더 잘림 방지) */
+    /* 모바일 상단 여백 */
     .block-container {
-        padding-top: 3rem !important; /* 천장에서 3rem 띄움 */
+        padding-top: 2rem !important;
         padding-bottom: 5rem !important;
     }
     
     /* 헤더 */
     .app-header {
         display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 20px; /* 간격 추가 */
+        margin-bottom: 10px;
     }
-    .app-logo { font-size: 24px; font-weight: 900; color: #1C1C1E; letter-spacing: -1px; }
+    .app-logo { font-size: 26px; font-weight: 900; color: #1C1C1E; letter-spacing: -1px; }
     .weather-pill { 
-        background: white; padding: 6px 12px; border-radius: 20px; 
+        background: white; padding: 6px 14px; border-radius: 20px; 
         font-size: 13px; font-weight: 700; color: #1C1C1E;
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
-    /* 입력 카드 */
-    .input-container {
-        background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    /* [NEW] 광고 배너 (Ad Banner) - 빨간 박스 대체 */
+    .ad-banner {
+        background: #e9ecef; 
+        border: 1px dashed #adb5bd;
+        border-radius: 16px; padding: 12px; margin-bottom: 20px;
+        text-align: center; font-size: 13px; color: #495057;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
     }
-    
-    /* 액션 카드 (Hero) */
+    .ad-tag {
+        background: #ced4da; color: white; font-size: 10px; font-weight: bold;
+        padding: 2px 6px; border-radius: 4px;
+    }
+
+    /* 액션 카드 (Hero) - [FIX] 노란색 수정 */
     .hero-card {
-        border-radius: 26px; 
-        padding: 40px 20px 60px 20px; /* 하단 패딩 넉넉하게 (바 공간) */
+        border-radius: 26px; padding: 40px 20px 60px 20px;
         text-align: center; color: white; margin-bottom: 20px;
         box-shadow: 0 15px 35px rgba(0,0,0,0.15);
         position: relative; overflow: hidden;
         animation: pulse 2s infinite ease-in-out;
     }
     .hero-green { background: linear-gradient(135deg, #34C759, #30B0C7); }
-    .hero-yellow { background: linear-gradient(135deg, #FF9F0A, #FF375F); }
+    
+    /* [FIX] 찐 노란색 (Yellow) */
+    .hero-yellow { 
+        background: linear-gradient(135deg, #FFCC00 0%, #FF9500 100%); 
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1); /* 글씨 잘 보이게 그림자 */
+    }
+    
     .hero-red { background: linear-gradient(135deg, #FF453A, #FF375F); }
     .hero-blue { background: linear-gradient(135deg, #007AFF, #5AC8FA); }
 
@@ -62,7 +74,7 @@ st.markdown("""
     .hero-title { font-size: 36px; font-weight: 800; margin: 0; line-height: 1.2; }
     .hero-sub { font-size: 16px; font-weight: 600; margin-top: 8px; opacity: 0.95; }
 
-    /* [Update] Hero 내부 미니 트래킹 바 (CSS 수정) */
+    /* Hero 내부 미니 트래킹 바 */
     .hero-progress-area {
         position: absolute; bottom: 25px; left: 25px; right: 25px;
         height: 20px; display: flex; align-items: center;
@@ -77,8 +89,7 @@ st.markdown("""
     .mini-avatar {
         position: absolute; top: 50%; transform: translate(-50%, -50%);
         font-size: 24px; transition: left 0.3s ease; z-index: 10;
-        text-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        margin-top: -3px; /* 이모지 수직 보정 */
+        text-shadow: 0 2px 5px rgba(0,0,0,0.2); margin-top: -3px;
     }
     .mini-text {
         position: absolute; bottom: -22px; width: 100%; text-align: center;
@@ -91,7 +102,7 @@ st.markdown("""
         100% { transform: scale(1); }
     }
 
-    /* 정보 그리드 (CSS Grid) */
+    /* 정보 그리드 (CSS Grid) - [FIX] 배치 변경 */
     .info-grid-container {
         display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%;
     }
@@ -108,6 +119,11 @@ st.markdown("""
     .txt-red { color: #FF453A !important; }
     .txt-blue { color: #007AFF !important; }
     .txt-green { color: #34C759 !important; }
+    
+    /* Selectbox 투명화 (배경에 녹아들게) */
+    div[data-baseweb="select"] > div {
+        background-color: rgba(255,255,255,0.5); border: none;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,51 +151,72 @@ def interpolate_pos(start, end, progress):
     return [lat, lon]
 
 # --------------------------------------------------
-# 🖥️ UI 구조 (Layout)
+# 🔧 Admin Console
 # --------------------------------------------------
+with st.sidebar:
+    st.header("🎬 Director Mode")
+    
+    # [FIX] 날씨 조절 가능하게 추가
+    weather = st.radio("날씨 설정", ["☀️ 맑음", "🌧️ 비", "❄️ 눈"], horizontal=True)
+    
+    journey_progress = st.slider("진행률 (%)", 0, 100, 0)
+    admin_speed = st.slider("속도 (km/h)", 2.0, 15.0, 5.0)
+    admin_time_passed = st.slider("버스 경과 (분)", 0, 60, 25)
+    admin_seats = st.slider("잔여 좌석 (석)", 0, 45, 4)
+    prev_bus_status = st.radio("상태", ["🟢 빈 자리", "🔴 만석"], index=0)
 
-# [1] 헤더 (Header)
-st.markdown("""
+# --------------------------------------------------
+# 🖥️ 메인 로직
+# --------------------------------------------------
+# 날씨 아이콘 파싱
+weather_icon = weather.split(" ")[0]
+
+# [1] 헤더
+st.markdown(f"""
 <div class="app-header">
     <div class="app-logo">TANA</div>
-    <div class="weather-pill">☀️ 18°C</div>
+    <div class="weather-pill">{weather_icon} 18°C</div>
 </div>
 """, unsafe_allow_html=True)
 
-# [2] 사용자 입력 (Input Section)
-st.markdown('<div class="input-container">', unsafe_allow_html=True)
+# [2] 광고 배너 (빨간 박스 대체)
+st.markdown("""
+<div class="ad-banner">
+    <span class="ad-tag">AD</span>
+    <span><b>스타벅스</b> : 버스 기다릴 땐 따뜻한 라떼 한 잔 ☕️</span>
+</div>
+""", unsafe_allow_html=True)
+
+# [3] 사용자 입력 (투명하게)
 c1, c2 = st.columns(2)
 with c1:
     target_station = st.selectbox("출발 정류장", list(station_db.keys()))
 with c2:
     target_bus = st.selectbox("탑승 버스", station_db[target_station]["buses"])
-st.markdown('</div>', unsafe_allow_html=True)
-
-# --- Admin Controls ---
-with st.sidebar:
-    st.header("🎬 Director Mode")
-    journey_progress = st.slider("진행률 (%)", 0, 100, 0)
-    admin_speed = st.slider("속도 (km/h)", 2.0, 15.0, 5.0)
-    admin_time_passed = st.slider("버스 경과 (분)", 0, 60, 25)
-    admin_seats = st.slider("잔여 좌석", 0, 45, 4)
-    prev_bus_status = st.radio("상태", ["🟢 빈 자리", "🔴 만석"], index=0)
 
 # --- 로직 계산 ---
 origin = USER_ORIGIN
 dest = station_db[target_station]["coords"]
 curr_pos = interpolate_pos(origin, dest, journey_progress / 100)
 dist_km = calculate_distance(curr_pos[0], curr_pos[1], dest[0], dest[1])
-req_time = 0 if dist_km < 0.02 else (dist_km / admin_speed) * 60
+
+# 날씨 저항 적용
+resist = 1.0
+if "🌧️" in weather: resist = 0.8
+elif "❄️" in weather: resist = 0.7
+real_speed = admin_speed * resist
+
+req_time = 0 if dist_km < 0.02 else (dist_km / real_speed) * 60
 
 base_queue = 0 if "빈 자리" in prev_bus_status else 25
 q_future = base_queue + int(admin_time_passed * 0.5) + (0.5 * req_time)
-bus_eta = 15
+bus_eta = 15 # 버스 도착 시간 (고정)
 
 # 상태 결정
 if journey_progress >= 100:
     theme, icon, title, sub = "hero-blue", "🏁", "도착 완료", "수고하셨습니다!"
 elif req_time > bus_eta:
-    theme, icon, title, sub = "hero-red", "🚫", "탑승 불가", f"버스 도착 {bus_eta}분 전"
+    theme, icon, title, sub = "hero-red", "🚫", "탑승 불가", f"버스 {bus_eta}분 전 도착"
 elif q_future > admin_seats:
     theme, icon, title, sub = "hero-red", "😱", "포기해", f"대기 {int(q_future)}명 (만석)"
 elif q_future > (admin_seats - 5):
@@ -187,10 +224,9 @@ elif q_future > (admin_seats - 5):
 else:
     theme, icon, title, sub = "hero-green", "☕️", "여유 있음", "천천히 걸어가세요"
 
-# [3] 액션 카드 (Hero) - [Fix] HTML 공백 제거 (한 줄 처리)
-avatar = '🚀' if admin_speed > 10 else ('🏃' if admin_speed > 6 else '🚶')
+# [4] 액션 카드 (Hero)
+avatar = '🚀' if real_speed > 10 else ('🏃' if real_speed > 6 else '🚶')
 
-# 주의: f-string 안에서 HTML 태그 앞에 공백을 없애야 코드블록으로 인식 안 됨
 st.markdown(f"""
 <div class="hero-card {theme}">
 <span class="hero-icon">{icon}</span>
@@ -204,8 +240,14 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# [4] 정보 그리드
+# [5] 정보 그리드 (위치 변경 적용)
 seat_cls = "txt-red" if admin_seats < 5 else "txt-green"
+
+# [FIX] 시간 초단위 변환 함수
+def get_min_sec(t):
+    m = int(t)
+    s = int((t - m) * 60)
+    return f"{m}분 {s}초"
 
 st.markdown(f"""
 <div class="info-grid-container">
@@ -214,20 +256,23 @@ st.markdown(f"""
 <div class="grid-value">{int(q_future)}명</div>
 <div class="grid-sub">현재 {int(base_queue + admin_time_passed*0.5)}명</div>
 </div>
+
 <div class="grid-card">
-<div class="grid-label">⏱ 소요 시간</div>
-<div class="grid-value">{int(req_time)}분</div>
-<div class="grid-sub">도착 예정</div>
+<div class="grid-label">🚌 버스 도착 전</div>
+<div class="grid-value">{bus_eta}분</div>
+<div class="grid-sub">{target_bus}</div>
 </div>
+
 <div class="grid-card">
 <div class="grid-label">💺 잔여 좌석</div>
 <div class="grid-value {seat_cls}">{admin_seats}석</div>
-<div class="grid-sub">{bus_eta}분 후 도착</div>
+<div class="grid-sub">여유 {admin_seats-5 if admin_seats>5 else 0}석</div>
 </div>
+
 <div class="grid-card">
-<div class="grid-label">🚌 버스 정보</div>
-<div class="grid-value txt-blue">{target_bus}</div>
-<div class="grid-sub">{target_station}행</div>
+<div class="grid-label">⏱ 내 소요 시간</div>
+<div class="grid-value">{get_min_sec(req_time)}</div>
+<div class="grid-sub">속도 {real_speed:.1f}km/h</div>
 </div>
 </div>
 """, unsafe_allow_html=True)
