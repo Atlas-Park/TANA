@@ -4,17 +4,8 @@ import numpy as np
 import math
 import pydeck as pdk
 import base64
+import textwrap
 
-# --------------------------------------------------
-# [필수] Streamlit Cloud 배포를 위한 API Key 설정
-# --------------------------------------------------
-try:
-    # secrets.toml 파일에서 "BUS_API_KEY" 값을 불러옵니다.
-    API_KEY_BUS = st.secrets["BUS_API_KEY"] 
-except KeyError:
-    # 키가 없을 때 (로컬 테스트용) 오류를 피하기 위한 안전장치
-    API_KEY_BUS = "YOUR_DUMMY_KEY_FOR_LOCAL_TESTING" 
-    # st.error("⚠️ [배포 오류] secrets.toml 파일에 BUS_API_KEY가 설정되지 않았습니다.")
 # 페이지 설정
 st.set_page_config(page_title="타나(TANA)", page_icon="🚦", layout="centered")
 
@@ -80,29 +71,20 @@ st.markdown("""
     .warning-bg { background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%); color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.1); box-shadow: 0 10px 25px rgba(255, 193, 7, 0.3); }
     .danger-bg { background: linear-gradient(135deg, #dc3545 0%, #c92a2a 100%); box-shadow: 0 10px 25px rgba(220, 53, 69, 0.3); }
     
-    /* 결과창 내부 디테일 (가로 배치) */
+    /* [New] 도착 완료용 파란색 배경 */
+    .arrival-bg { background: linear-gradient(135deg, #007bff 0%, #0062cc 100%); box-shadow: 0 10px 25px rgba(0, 123, 255, 0.3); }
+
+    /* 결과창 내부 디테일 */
     .status-detail-container {
-        display: flex; 
-        justify-content: space-around; 
-        align-items: center;
-        margin-top: 25px; 
-        padding-top: 15px; 
-        border-top: 1px solid rgba(255,255,255,0.3);
+        display: flex; justify-content: space-around; align-items: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3);
     }
-    .detail-item-box {
-        flex: 1;
-        text-align: center;
-    }
-    .detail-divider {
-        width: 1px; height: 30px; background-color: rgba(255,255,255,0.3);
-    }
+    .detail-item-box { flex: 1; text-align: center; }
+    .detail-divider { width: 1px; height: 30px; background-color: rgba(255,255,255,0.3); }
     .d-label { display: block; font-size: 12px; opacity: 0.9; margin-bottom: 4px; }
     .d-val { display: block; font-size: 18px; font-weight: 800; }
 
     /* 하단 요약 정보 */
-    .summary-row {
-        display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 15px;
-    }
+    .summary-row { display: flex; justify-content: space-around; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.3); font-size: 15px; }
 
     /* 아바타 */
     .avatar-container { text-align: center; margin-bottom: 5px; height: 80px; display: flex; align-items: center; justify-content: center; }
@@ -146,20 +128,32 @@ def format_time(minutes):
     return f"{mins}분 {secs}초"
 
 # --------------------------------------------------
-# 📍 데이터
+# 📍 데이터 (정류장 & 버스 매핑)
 # --------------------------------------------------
-default_start_locs = {
-    "송도 2기숙사 (D동)": [37.3835, 126.6550],
-    "송도 1기숙사 (A동)": [37.3820, 126.6570],
-    "언더우드 기념도서관": [37.3805, 126.6590]
+# 내 위치 (시연용 고정: 송도 2기숙사)
+USER_ORIGIN = [37.3835, 126.6550]
+
+# 정류장 데이터 (좌표 + 가능한 버스 목록)
+station_db = {
+    "연세대학교 (국제)": {
+        "coords": [37.3815, 126.6580],
+        "buses": ["M6724", "9201"]
+    },
+    "박문여자고등학교": {
+        "coords": [37.4050, 126.6680],
+        "buses": ["순환41", "9"]
+    },
+    "박문중학교": {
+        "coords": [37.4020, 126.6650],
+        "buses": ["순환41"]
+    }
 }
-BUS_STOP_COORDS = [37.3815, 126.6580]
 
 # --------------------------------------------------
 # 🔧 Admin Console
 # --------------------------------------------------
 with st.sidebar:
-    st.header("🎬 TANA Studio V12")
+    st.header("🎬 TANA Studio V14")
     
     st.subheader("1. 버스 상황")
     admin_time_passed = st.slider("이전 버스 경과 (분)", 0, 60, 25)
@@ -183,12 +177,12 @@ with st.sidebar:
 
 # 1. 타이틀 & 광고
 st.title("타나(TANA)")
-st.markdown("""
+st.markdown(textwrap.dedent("""
     <div class="ad-box">
         <span class="ad-badge">AD</span>
         <span>기다리는 시간, <b>스타벅스</b>에서 따뜻하게 보내세요 (쿠폰받기)</span>
     </div>
-""", unsafe_allow_html=True)
+"""), unsafe_allow_html=True)
 
 # 2. 프로필 & 날씨
 st.markdown(f"""
@@ -205,18 +199,25 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# 3. 출발지 & 버스 선택
+# 3. [UX 변경] 탑승 정류장 선택 -> 버스 자동 변경
 st.markdown('<div class="search-container">', unsafe_allow_html=True)
-c1, c2 = st.columns([1.5, 1])
+c1, c2 = st.columns([1.3, 1])
+
 with c1: 
-    start_name = st.selectbox("출발지", ["📍 현위치 (GPS)"] + list(default_start_locs.keys()))
+    # 출발지는 '현위치'로 고정된다는 느낌을 주기 위해 텍스트만 표시하거나, 그냥 Selectbox 제목을 '현위치'로
+    # 형 요청: 출발지 선택 X -> 현위치는 앱에서 측정 -> 탑승 정류장 고르기
+    target_station_name = st.selectbox("탑승 정류장 (Destination)", list(station_db.keys()))
+
 with c2: 
-    target_bus = st.selectbox("탑승 버스", ["M6724", "9201"])
+    # 정류장에 맞는 버스 목록만 가져오기
+    available_buses = station_db[target_station_name]["buses"]
+    target_bus = st.selectbox("탑승 버스", available_buses)
+
 st.markdown('</div>', unsafe_allow_html=True)
 
-# 좌표 계산
-origin_coords = default_start_locs.get(start_name, [37.3835, 126.6550]) if start_name != "📍 현위치 (GPS)" else [37.3835, 126.6550]
-dest_coords = BUS_STOP_COORDS 
+# 좌표 설정
+origin_coords = USER_ORIGIN
+dest_coords = station_db[target_station_name]["coords"]
 current_user_coords = interpolate_pos(origin_coords, dest_coords, journey_progress / 100)
 
 
@@ -295,7 +296,7 @@ st.markdown(f"""
 st.divider()
 
 
-# 7. 최종 결과
+# 7. 최종 결과 (로직 수정: 잔여석 vs 대기열)
 remain_distance = calculate_distance(current_user_coords[0], current_user_coords[1], dest_coords[0], dest_coords[1])
 
 if remain_distance < 0.02: 
@@ -306,24 +307,23 @@ else:
 
 inflow_rate = 3.5
 current_queue = 0 if is_reset_mode else int(admin_time_passed * 2.1)
-bus_capacity = 45
 future_queue = current_queue + (inflow_rate * required_time)
 final_bus_time_for_calc = 15 
 
+# [Logic Fix] 상태 판단 로직 강화
 if journey_progress >= 100:
-    bg_class, icon, msg, sub_msg = "success-bg", "🏁", "도착 완료", "정류장에 도착했습니다!"
+    bg_class, icon, msg, sub_msg = "arrival-bg", "🏁", "도착 완료", "정류장에 도착했습니다!"
 elif required_time > final_bus_time_for_calc:
     bg_class, icon, msg, sub_msg = "danger-bg", "🔴", "탑승 불가", f"이미 버스가 떠납니다"
-elif future_queue > 55 or admin_seats == 0:
-    bg_class, icon, msg, sub_msg = "danger-bg", "🔴", "탑승 불가", f"줄이 너무 깁니다"
-elif future_queue > 45 or admin_seats < 5:
+elif future_queue > admin_seats: # [핵심] 대기열 > 잔여석이면 무조건 빨강
+    bg_class, icon, msg, sub_msg = "danger-bg", "🔴", "탑승 불가", f"줄이 너무 깁니다 (잔여 {admin_seats}석)"
+elif future_queue > (admin_seats - 5): # 간당간당하면 노랑
     bg_class, icon, msg, sub_msg = "warning-bg", "🟡", "전력 질주!", f"지금 뛰면 막차 가능"
 else:
     bg_class, icon, msg, sub_msg = "success-bg", "🟢", "여유 있음", f"편안하게 가세요"
 
-# [Bug Fix: HTML Indentation 제거]
-# 들여쓰기를 없애고 문자열을 한 줄로 붙이거나 왼쪽 벽에 붙여서 생성
-html_content = f"""
+# HTML 렌더링
+html_content = textwrap.dedent(f"""
 <div class="status-box {bg_class}">
     <div style="font-size: 50px; margin-bottom: 10px;">{icon}</div>
     <h2 style="margin:0; color: inherit; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">{msg}</h2>
@@ -349,6 +349,6 @@ html_content = f"""
         <div>⏱️ 도착 예정 <b>{format_time(required_time)}</b></div>
     </div>
 </div>
-"""
+""")
 
 st.markdown(html_content, unsafe_allow_html=True)
