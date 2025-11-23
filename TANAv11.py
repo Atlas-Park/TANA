@@ -8,7 +8,7 @@ import textwrap
 st.set_page_config(page_title="TANA", page_icon="🚦", layout="centered")
 
 # --------------------------------------------------
-# 🎨 CSS 스타일 (FIX: 셀렉트박스 글씨 색상 강제 & 멘트 수정)
+# 🎨 CSS 스타일 (Final Fix: 헤더 여백 & 입력창 디자인)
 # --------------------------------------------------
 st.markdown("""
 <style>
@@ -20,18 +20,18 @@ st.markdown("""
         font-family: 'Pretendard', sans-serif;
     }
     
-    /* 모바일 상단 여백 */
+    /* [FIX 1] 상단 여백 대폭 추가 (잘림 방지) */
     .block-container {
-        padding-top: 2rem !important;
+        padding-top: 4rem !important; /* 2rem -> 4rem */
         padding-bottom: 5rem !important;
     }
     
     /* 헤더 */
     .app-header {
         display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
     }
-    .app-logo { font-size: 26px; font-weight: 900; color: #1C1C1E; letter-spacing: -1px; }
+    .app-logo { font-size: 28px; font-weight: 900; color: #1C1C1E; letter-spacing: -1px; }
     .weather-pill { 
         background: white; padding: 6px 14px; border-radius: 20px; 
         font-size: 13px; font-weight: 700; color: #1C1C1E;
@@ -42,7 +42,7 @@ st.markdown("""
     .ad-banner {
         background: #e9ecef; 
         border: 1px dashed #adb5bd;
-        border-radius: 16px; padding: 12px; margin-bottom: 20px;
+        border-radius: 16px; padding: 12px; margin-bottom: 25px;
         text-align: center; font-size: 13px; color: #495057;
         display: flex; align-items: center; justify-content: center; gap: 10px;
     }
@@ -51,25 +51,32 @@ st.markdown("""
         padding: 2px 6px; border-radius: 4px;
     }
 
-    /* [FIX] 입력창 컨테이너 & 셀렉트박스 강제 스타일링 */
-    .input-container {
-        background: white; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    /* [FIX 3] 입력창(Selectbox) 디자인 커스텀 - 흰색 배경 & 잘 보이게 */
+    /* 셀렉트박스 전체 컨테이너 */
+    [data-testid="stSelectbox"] {
+        margin-bottom: 10px;
     }
-    /* Streamlit 위젯 라벨 색상 강제 */
-    .stSelectbox label p { font-size: 12px !important; font-weight: 700 !important; color: #8E8E93 !important; }
-    /* 셀렉트박스 내부 텍스트 색상 검정으로 강제 (다크모드 방지) */
-    div[data-baseweb="select"] span {
-        color: #000000 !important;
+    /* 라벨 (출발 정류장 등) */
+    .stSelectbox label p { 
+        font-size: 12px !important; font-weight: 700 !important; color: #8E8E93 !important; 
+        margin-bottom: 4px;
     }
+    /* 클릭 박스 (배경 흰색으로 강제) */
     div[data-baseweb="select"] > div {
-        background-color: #F2F2F7 !important;
-        border-color: #E5E5EA !important;
-        color: #000000 !important;
+        background-color: #FFFFFF !important;
+        border: 1px solid #E5E5EA !important;
+        border-radius: 16px !important;
+        color: #1C1C1E !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
+        padding-left: 5px;
     }
-    /* 드롭다운 메뉴 텍스트도 검정으로 */
-    ul[data-baseweb="menu"] li span {
-        color: #000000 !important;
+    /* 선택된 텍스트 */
+    div[data-baseweb="select"] span {
+        color: #1C1C1E !important; font-weight: 600;
+    }
+    /* 드롭다운 아이콘 */
+    div[data-baseweb="select"] svg {
+        fill: #8E8E93 !important;
     }
 
     /* 액션 카드 (Hero) */
@@ -176,7 +183,6 @@ with st.sidebar:
 # --------------------------------------------------
 # 🖥️ 메인 로직
 # --------------------------------------------------
-# 날씨 아이콘 파싱
 weather_icon = weather.split(" ")[0]
 
 # [1] 헤더
@@ -195,14 +201,13 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# [3] 사용자 입력 (Input Section) - 배경색 흰색이라 글씨 검정 강제
-st.markdown('<div class="input-container">', unsafe_allow_html=True)
+# [3] 사용자 입력 (투명 박스 제거됨 -> 위젯 자체 스타일링 적용)
+# [FIX 2] 이상한 흰색 빈칸 사라짐
 c1, c2 = st.columns(2)
 with c1:
     target_station = st.selectbox("출발 정류장", list(station_db.keys()))
 with c2:
     target_bus = st.selectbox("탑승 버스", station_db[target_station]["buses"])
-st.markdown('</div>', unsafe_allow_html=True)
 
 # --- 로직 계산 ---
 origin = USER_ORIGIN
@@ -210,7 +215,6 @@ dest = station_db[target_station]["coords"]
 curr_pos = interpolate_pos(origin, dest, journey_progress / 100)
 dist_km = calculate_distance(curr_pos[0], curr_pos[1], dest[0], dest[1])
 
-# 날씨 저항
 resist = 1.0
 if "🌧️" in weather: resist = 0.8
 elif "❄️" in weather: resist = 0.7
@@ -253,7 +257,6 @@ st.markdown(f"""
 # [5] 정보 그리드
 seat_cls = "txt-red" if admin_seats < 5 else "txt-green"
 
-# 시간 변환 함수 (초단위)
 def get_min_sec(t):
     m = int(t)
     s = int((t - m) * 60)
