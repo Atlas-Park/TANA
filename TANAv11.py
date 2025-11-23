@@ -8,7 +8,7 @@ import textwrap
 st.set_page_config(page_title="TANA", page_icon="🚦", layout="centered")
 
 # --------------------------------------------------
-# 🎨 CSS 스타일 (Live Tracking 통합 & Input 추가)
+# 🎨 CSS 스타일 (수정: 헤더 여백 확보 & 들여쓰기 이슈 해결)
 # --------------------------------------------------
 st.markdown("""
 <style>
@@ -20,10 +20,16 @@ st.markdown("""
         font-family: 'Pretendard', sans-serif;
     }
     
+    /* [Fix] 모바일 상단 여백 확보 (헤더 잘림 방지) */
+    .block-container {
+        padding-top: 3rem !important; /* 천장에서 3rem 띄움 */
+        padding-bottom: 5rem !important;
+    }
+    
     /* 헤더 */
     .app-header {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 10px 5px 10px 5px;
+        margin-bottom: 20px; /* 간격 추가 */
     }
     .app-logo { font-size: 24px; font-weight: 900; color: #1C1C1E; letter-spacing: -1px; }
     .weather-pill { 
@@ -32,17 +38,16 @@ st.markdown("""
         box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
 
-    /* [New] 입력 카드 (Input Section) */
+    /* 입력 카드 */
     .input-container {
-        background: white; border-radius: 20px; padding: 15px 20px; margin-bottom: 20px;
+        background: white; border-radius: 20px; padding: 20px; margin-bottom: 25px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
     }
-    /* Streamlit Selectbox 스타일 덮어쓰기 (최대한 깔끔하게) */
-    .stSelectbox label { font-size: 12px; font-weight: 700; color: #8E8E93; }
     
-    /* [Update] 액션 카드 (Hero) - 하단에 진행바 통합 */
+    /* 액션 카드 (Hero) */
     .hero-card {
-        border-radius: 26px; padding: 35px 20px 50px 20px; /* 하단 패딩 늘림 (바 공간) */
+        border-radius: 26px; 
+        padding: 40px 20px 60px 20px; /* 하단 패딩 넉넉하게 (바 공간) */
         text-align: center; color: white; margin-bottom: 20px;
         box-shadow: 0 15px 35px rgba(0,0,0,0.15);
         position: relative; overflow: hidden;
@@ -53,13 +58,13 @@ st.markdown("""
     .hero-red { background: linear-gradient(135deg, #FF453A, #FF375F); }
     .hero-blue { background: linear-gradient(135deg, #007AFF, #5AC8FA); }
 
-    .hero-icon { font-size: 44px; display: block; margin-bottom: 5px; line-height: 1; }
-    .hero-title { font-size: 32px; font-weight: 800; margin: 0; line-height: 1.2; }
-    .hero-sub { font-size: 15px; font-weight: 600; margin-top: 5px; opacity: 0.95; }
+    .hero-icon { font-size: 48px; display: block; margin-bottom: 10px; line-height: 1; }
+    .hero-title { font-size: 36px; font-weight: 800; margin: 0; line-height: 1.2; }
+    .hero-sub { font-size: 16px; font-weight: 600; margin-top: 8px; opacity: 0.95; }
 
-    /* [New] Hero 내부 미니 트래킹 바 */
+    /* [Update] Hero 내부 미니 트래킹 바 (CSS 수정) */
     .hero-progress-area {
-        position: absolute; bottom: 20px; left: 25px; right: 25px;
+        position: absolute; bottom: 25px; left: 25px; right: 25px;
         height: 20px; display: flex; align-items: center;
     }
     .mini-track-bg {
@@ -71,12 +76,13 @@ st.markdown("""
     }
     .mini-avatar {
         position: absolute; top: 50%; transform: translate(-50%, -50%);
-        font-size: 20px; transition: left 0.3s ease; z-index: 10;
+        font-size: 24px; transition: left 0.3s ease; z-index: 10;
         text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        margin-top: -3px; /* 이모지 수직 보정 */
     }
     .mini-text {
-        position: absolute; bottom: -18px; width: 100%; text-align: center;
-        font-size: 10px; color: rgba(255,255,255,0.8); font-weight: 600;
+        position: absolute; bottom: -22px; width: 100%; text-align: center;
+        font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 700; letter-spacing: 0.5px;
     }
 
     @keyframes pulse {
@@ -85,26 +91,23 @@ st.markdown("""
         100% { transform: scale(1); }
     }
 
-    /* 정보 그리드 (CSS Grid 강제 적용) */
+    /* 정보 그리드 (CSS Grid) */
     .info-grid-container {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%;
     }
     .grid-card {
-        background: white; border-radius: 18px; padding: 18px 10px; text-align: center;
+        background: white; border-radius: 20px; padding: 20px 10px; text-align: center;
         box-shadow: 0 2px 8px rgba(0,0,0,0.03); 
         display: flex; flex-direction: column; justify-content: center; align-items: center;
         height: 100%;
     }
-    .grid-label { font-size: 11px; color: #8E8E93; font-weight: 700; margin-bottom: 4px; }
-    .grid-value { font-size: 20px; color: #1C1C1E; font-weight: 800; letter-spacing: -0.5px; }
-    .grid-sub { font-size: 10px; color: #AEAEB2; margin-top: 3px; font-weight: 500; }
+    .grid-label { font-size: 12px; color: #8E8E93; font-weight: 700; margin-bottom: 6px; }
+    .grid-value { font-size: 22px; color: #1C1C1E; font-weight: 800; letter-spacing: -0.5px; }
+    .grid-sub { font-size: 11px; color: #AEAEB2; margin-top: 4px; font-weight: 500; }
     
     .txt-red { color: #FF453A !important; }
     .txt-blue { color: #007AFF !important; }
     .txt-green { color: #34C759 !important; }
-    
-    /* 모바일 상단 여백 제거 */
-    .block-container { padding-top: 1rem; padding-bottom: 5rem; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,7 +138,7 @@ def interpolate_pos(start, end, progress):
 # 🖥️ UI 구조 (Layout)
 # --------------------------------------------------
 
-# [1] 헤더
+# [1] 헤더 (Header)
 st.markdown("""
 <div class="app-header">
     <div class="app-logo">TANA</div>
@@ -143,7 +146,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# [2] 사용자 입력 (Input Section) - 메인 상단 배치
+# [2] 사용자 입력 (Input Section)
 st.markdown('<div class="input-container">', unsafe_allow_html=True)
 c1, c2 = st.columns(2)
 with c1:
@@ -152,14 +155,13 @@ with c2:
     target_bus = st.selectbox("탑승 버스", station_db[target_station]["buses"])
 st.markdown('</div>', unsafe_allow_html=True)
 
-# --- Admin Controls (Sidebar) ---
+# --- Admin Controls ---
 with st.sidebar:
     st.header("🎬 Director Mode")
     journey_progress = st.slider("진행률 (%)", 0, 100, 0)
     admin_speed = st.slider("속도 (km/h)", 2.0, 15.0, 5.0)
     admin_time_passed = st.slider("버스 경과 (분)", 0, 60, 25)
     admin_seats = st.slider("잔여 좌석", 0, 45, 4)
-    weather = st.radio("날씨", ["☀️", "🌧️", "❄️"], horizontal=True)
     prev_bus_status = st.radio("상태", ["🟢 빈 자리", "🔴 만석"], index=0)
 
 # --- 로직 계산 ---
@@ -181,53 +183,51 @@ elif req_time > bus_eta:
 elif q_future > admin_seats:
     theme, icon, title, sub = "hero-red", "😱", "포기해", f"대기 {int(q_future)}명 (만석)"
 elif q_future > (admin_seats - 5):
-    theme, icon, title, sub = "hero-yellow", "🏃", "지금 뛰어!", f"막차 가능성 있음 ({int(admin_seats)}석)"
+    theme, icon, title, sub = "hero-yellow", "🏃", "지금 뛰어!", f"막차 가능성 ({int(admin_seats)}석)"
 else:
     theme, icon, title, sub = "hero-green", "☕️", "여유 있음", "천천히 걸어가세요"
 
-# [3] 액션 카드 (Hero) + [New] 내부 통합 트래킹
+# [3] 액션 카드 (Hero) - [Fix] HTML 공백 제거 (한 줄 처리)
 avatar = '🚀' if admin_speed > 10 else ('🏃' if admin_speed > 6 else '🚶')
 
+# 주의: f-string 안에서 HTML 태그 앞에 공백을 없애야 코드블록으로 인식 안 됨
 st.markdown(f"""
 <div class="hero-card {theme}">
-    <span class="hero-icon">{icon}</span>
-    <h1 class="hero-title">{title}</h1>
-    <div class="hero-sub">{sub}</div>
-    
-    <div class="hero-progress-area">
-        <div class="mini-track-bg">
-            <div class="mini-track-fill" style="width: {journey_progress}%;"></div>
-        </div>
-        <div class="mini-avatar" style="left: {journey_progress}%;">{avatar}</div>
-        <div class="mini-text">{int(dist_km*1000)}m 남음</div>
-    </div>
+<span class="hero-icon">{icon}</span>
+<h1 class="hero-title">{title}</h1>
+<div class="hero-sub">{sub}</div>
+<div class="hero-progress-area">
+<div class="mini-track-bg"><div class="mini-track-fill" style="width: {journey_progress}%;"></div></div>
+<div class="mini-avatar" style="left: {journey_progress}%;">{avatar}</div>
+<div class="mini-text">{int(dist_km*1000)}m 남음</div>
+</div>
 </div>
 """, unsafe_allow_html=True)
 
-# [4] 정보 그리드 (Info Grid) - 2x2 강제
+# [4] 정보 그리드
 seat_cls = "txt-red" if admin_seats < 5 else "txt-green"
 
 st.markdown(f"""
 <div class="info-grid-container">
-    <div class="grid-card">
-        <div class="grid-label">👥 대기 인원</div>
-        <div class="grid-value">{int(q_future)}명</div>
-        <div class="grid-sub">현재 {int(base_queue + admin_time_passed*0.5)}명</div>
-    </div>
-    <div class="grid-card">
-        <div class="grid-label">⏱ 소요 시간</div>
-        <div class="grid-value">{int(req_time)}분</div>
-        <div class="grid-sub">도착 예정</div>
-    </div>
-    <div class="grid-card">
-        <div class="grid-label">💺 잔여 좌석</div>
-        <div class="grid-value {seat_cls}">{admin_seats}석</div>
-        <div class="grid-sub">{bus_eta}분 후 도착</div>
-    </div>
-    <div class="grid-card">
-        <div class="grid-label">🚌 버스 정보</div>
-        <div class="grid-value txt-blue">{target_bus}</div>
-        <div class="grid-sub">{target_station}행</div>
-    </div>
+<div class="grid-card">
+<div class="grid-label">👥 대기 인원</div>
+<div class="grid-value">{int(q_future)}명</div>
+<div class="grid-sub">현재 {int(base_queue + admin_time_passed*0.5)}명</div>
+</div>
+<div class="grid-card">
+<div class="grid-label">⏱ 소요 시간</div>
+<div class="grid-value">{int(req_time)}분</div>
+<div class="grid-sub">도착 예정</div>
+</div>
+<div class="grid-card">
+<div class="grid-label">💺 잔여 좌석</div>
+<div class="grid-value {seat_cls}">{admin_seats}석</div>
+<div class="grid-sub">{bus_eta}분 후 도착</div>
+</div>
+<div class="grid-card">
+<div class="grid-label">🚌 버스 정보</div>
+<div class="grid-value txt-blue">{target_bus}</div>
+<div class="grid-sub">{target_station}행</div>
+</div>
 </div>
 """, unsafe_allow_html=True)
